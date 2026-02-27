@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couch Guardian - Невидимая Рука Отдыха</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        
+        .character-selection {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .character-option {
+            cursor: pointer;
+            padding: 20px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+        
+        .character-option:hover {
+            transform: translateY(-5px);
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .character-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+        }
+        
+        .character-icon {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+        
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(to bottom, #c6ffdd, #fbd786, #f7797d);
+            border-radius: 15px;
+            margin: 30px 0;
+            overflow: hidden;
+            border: 5px solid #4a5568;
+        }
+        
+        .couch {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 120px;
+            background: #8b4513;
+            border-radius: 20px 20px 0 0;
+            box-shadow: inset 0 -10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .couch-cushion {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            background: #a0522d;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .character {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.2s ease;
+        }
+        
+        .character-body {
+            width: 80px;
+            height: 120px;
+            background: #48bb78;
+            border-radius: 40px 40px 20px 20px;
+            position: relative;
+        }
+        
+        .character.female .character-body {
+            background: #ed64a6;
+        }
+        
+        .character-head {
+            width: 50px;
+            height: 50px;
+            background: #fbd38d;
+            border-radius: 50%;
+            position: absolute;
+            top: -30px;
+            left: 15px;
+        }
+        
+        .character-arm {
+            position: absolute;
+            width: 60px;
+            height: 20px;
+            background: inherit;
+            border-radius: 10px;
+        }
+        
+        .arm-left {
+            top: 30px;
+            left: -40px;
+            transform: rotate(45deg);
+        }
+        
+        .arm-right {
+            top: 30px;
+            right: -40px;
+            transform: rotate(-45deg);
+        }
+        
+        .invisible-hand {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            border: 2px dashed rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0, 0, 0, 0.5);
+            font-size: 14px;
+            user-select: none;
+        }
+        
+        .invisible-hand::after {
+            content: "👆";
+            font-size: 30px;
+            opacity: 0.7;
+        }
+        
+        .invisible-hand:hover {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        
+        .invisible-hand:active {
+            transform: scale(0.95);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        #startBtn {
+            background: #48bb78;
+            color: white;
+        }
+        
+        #startBtn:hover {
+            background: #38a169;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(72, 187, 120, 0.3);
+        }
+        
+        #resetBtn {
+            background: #e53e3e;
+            color: white;
+        }
+        
+        #resetBtn:hover {
+            background: #c53030;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(229, 62, 62, 0.3);
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+            border-left: 5px solid #667eea;
+        }
+        
+        .instructions h3 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .instructions li {
+            padding: 8px 0;
+            color: #718096;
+        }
+        
+        .instructions li::before {
+            content: "🎮";
+            margin-right: 10px;
+        }
+        
+        .message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .message.show {
+            opacity: 1;
+        }
+        
+        .thought-bubble {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            min-width: 150px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .thought-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent transparent;
+        }
+        
+        .thought-bubble.show {
+            opacity: 1;
+        }
+        
+        .level-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .game-area {
+                height: 300px;
+            }
+            
+            .character-selection {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🛋️ Couch Guardian</h1>
+        <div class="subtitle">Невидимая Рука Отдыха</div>
+        
+        <div class="character-selection">
+            <div class="character-option" id="maleCharacter" onclick="selectCharacter('male')">
+                <div class="character-icon">👨</div>
+                <div class="character-name">Чувак</div>
+                <div class="character-desc">Упрямый трудоголик</div>
+            </div>
+            <div class="character-option" id="femaleCharacter" onclick="selectCharacter('female')">
+                <div class="character-icon">👩</div>
+                <div class="character-name">Чувиха</div>
+                <div class="character-desc">Изобретательная непоседа</div>
+            </div>
+        </div>
+        
+        <div class="game-area" id="gameArea">
+            <div class="level-indicator">Уровень: <span id="level">1</span></div>
+            
+            <div class="couch">
+                <div class="couch-cushion"></div>
+            </div>
+            
+            <div class="character" id="character">
+                <div class="character-body">
+                    <div class="character-head"></div>
+                    <div class="character-arm arm-left"></div>
+                    <div class="character-arm arm-right"></div>
+                </div>
+                <div class="thought-bubble" id="thoughtBubble">Хочу встать...</div>
+            </div>
+            
+            <div class="invisible-hand" id="invisibleHand"></div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="restTime">0</div>
+                <div class="stat-label">Секунд отдыха</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="pushCount">0</div>
+                <div class="stat-label">Нежных толчков</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Очков релаксации</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="startGame()">▶️ Начать игру</button>
+            <button id="resetBtn" onclick="resetGame()">🔄 Сбросить</button>
+        </div>
+        
+        <div class="instructions">
+            <h3>🎯 Как играть:</h3>
+            <ul>
+                <li>Выберите персонажа (Чувак или Чувиха)</li>
+                <li>Нажмите "Начать игру"</li>
+                <li>Персонаж будет пытаться встать с дивана</li>
+                <li>Перетаскивайте <strong>Невидимую Руку</strong> (прозрачный круг) и нажимайте на персонажа, чтобы мягко толкнуть его обратно на диван</li>
+                <li>Чем дольше персонаж отдыхает - тем больше очков вы получаете!</li>
+                <li>Слишком сильный толчок сбросит прогресс уровня</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="message" id="message"></div>
+
+    <script>
+        // Game state
+        let gameState = {
+            isPlaying: false,
+            selectedCharacter: 'male',
+            restTime: 0,
+            pushCount: 0,
+            score: 0,
+            level: 1,
+            characterAttempts: 0,
+            maxAttempts: 5,
+            characterPosition: { x: 0, y: 0 },
+            handPosition: { x: 0, y: 0 },
+            gameInterval: null,
+            attemptInterval: null,
+            thoughtMessages: [
+                "Хочу встать...",
+                "Может, чаю?",
+                "Надо проверить телефон",
+                "Пора бы подвигаться",
+                "Скучно лежать...",
+                "Хочу печенек!",
+                "Надо убраться",
+                "Пора работать",
+                "Диван меня затягивает...",
+                "Еще 5 минуточек..."
+            ]
+        };
+
+        // DOM elements
+        const character = document.getElementById('character');
+        const invisibleHand = document.getElementById('invisibleHand');
+        const gameArea = document.getElementById('gameArea');
+        const thoughtBubble = document.getElementById('thoughtBubble');
+        
+        // Stats elements
+        const restTimeElement = document.getElementById('restTime');
+        const pushCountElement = document.getElementById('pushCount');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+
+        // Character selection
+        function selectCharacter(gender) {
+            gameState.selectedCharacter = gender;
+            
+            // Update UI
+            document.getElementById('maleCharacter').classList.remove('selected');
+            document.getElementById('femaleCharacter').classList.remove('selected');
+            
+            if (gender === 'male') {
+                document.getElementById('maleCharacter').classList.add('selected');
+                character.classList.remove('female');
+            } else {
+                document.getElementById('femaleCharacter').classList.add('selected');
+                character.classList.add('female');
+            }
+            
+            showMessage(`Выбран: ${gender === 'male' ? 'Чувак' : 'Чувиха'}!`);
+        }
+
+        // Show message
+        function showMessage(text) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.classList.add('show');
+            
+            setTimeout(() => {
+                message.classList.remove('show');
+            }, 2000);
+        }
+
+        // Show thought bubble
+        function showThought(text) {
+            thoughtBubble.textContent = text;
+            thoughtBubble.classList.add('show');
+            
+            setTimeout(() => {
+                thoughtBubble.classList.remove('show');
+            }, 2000);
+        }
+
+        // Start game
+        function startGame() {
+            if (gameState.isPlaying) return;
+            
+            gameState.isPlaying = true;
+            gameState.restTime = 0;
+            gameState.pushCount = 0;
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.characterAttempts = 0;
+            
+            // Initialize positions
+            const gameRect = gameArea.getBoundingClientRect();
+            gameState.characterPosition = {
+                x: gameRect.width / 2,
+                y: gameRect.height - 170
+            };
+            
+            gameState.handPosition = {
+                x: gameRect.width / 2,
+                y: gameRect.height / 2
+            };
+            
+            updatePositions();
+            
+            // Start game loop
+            gameState.gameInterval = setInterval(gameLoop, 100);
+            
+            // Start character attempts
+            startCharacterAttempts();
+            
+            showMessage('Игра началась! Не дайте персонажу встать!');
+            document.getElementById('startBtn').textContent = '⏸️ Пауза';
+            document.getElementById('startBtn').onclick = pauseGame;
+        }
+
+        // Pause game
+        function pauseGame() {
+            if (!gameState.isPlaying) return;
+            
+            gameState.isPlaying = false;
+            clearInterval(gameState.gameInterval);
+            clearInterval(gameState.attemptInterval);
+            
+            showMessage('Игра на паузе');
+            document.getElementById('startBtn').textContent = '▶️ Продолжить';
+            document.getElementById('startBtn').onclick = startGame;
+        }
+
+        // Reset game
+        function resetGame() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.gameInterval);
+            clearInterval(gameState.attemptInterval);
+            
+            gameState.restTime = 0;
+            gameState.pushCount = 0;
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.characterAttempts = 0;
+            
+            updateStats();
+            updatePositions();
+            
+            showMessage('Игра сброшена');
+            document.getElementById('startBtn').textContent = '▶️ Начать игру';
+            document.getElementById('startBtn').onclick = startGame;
+            
+            // Reset character position
+            character.style.transform = 'translateX(-50%)';
+            thoughtBubble.classList.remove('show');
+        }
+
+        // Start character attempts
+        function startCharacterAttempts() {
+            gameState.attemptInterval = setInterval(() => {
+                if (!gameState.isPlaying) return;
+                
+                // Random chance to attempt getting up
+                if (Math.random() < 0.3 && gameState.characterAttempts < gameState.maxAttempts) {
+                    attemptToGetUp();
+                }
+                
+                // Show random thought
+                if (Math.random() < 0.2) {
+                    const randomThought = gameState.thoughtMessages[
+                        Math.floor(Math.random() * gameState.thoughtMessages.length)
+                    ];
+                    showThought(randomThought);
+                }
+            }, 2000);
+        }
+
+        // Character attempts to get up
+        function attemptToGetUp() {
+            gameState.characterAttempts++;
+            
+            // Animate character trying to get up
+            character.style.transition = 'transform 0.5s ease';
+            character.style.transform = 'translateX(-50%) translateY(-30px)';
+            
+            showThought("Попытка встать #" + gameState.characterAttempts);
+            
+            // Reset after attempt
+            setTimeout(() => {
+                if (gameState.isPlaying) {
+                    character.style.transform = 'translateX(-50%)';
+                }
+            }, 1000);
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameState.isPlaying) return;
+            
+            // Increase rest time
+            gameState.restTime += 0.1;
+            
+            // Calculate score
+            gameState.score = Math.floor(gameState.restTime * 10 + gameState.pushCount * 5);
+            
+            // Level progression
+            const newLevel = Math.floor(gameState.restTime / 30) + 1;
+            if (newLevel > gameState.level) {
+                gameState.level = newLevel;
+                gameState.maxAttempts = 5 + gameState.level;
+                showMessage(`Уровень ${gameState.level}! Персонаж стал более упрямым!`);
+            }
+            
+            updateStats();
+            
+            // Check if character succeeded in getting up
+            if (gameState.characterAttempts >= gameState.maxAttempts) {
+                endGame(false);
+            }
+        }
+
+        // Update stats display
+        function updateStats() {
+            restTimeElement.textContent = gameState.restTime.toFixed(1);
+            pushCountElement.textContent = gameState.pushCount;
+            scoreElement.textContent = gameState.score;
+            levelElement.textContent = gameState.level;
+        }
+
+        // Update positions
+        function updatePositions() {
+            character.style.left = gameState.characterPosition.x + 'px';
+            character.style.bottom = gameState.characterPosition.y + 'px';
+            
+            invisibleHand.style.left = (gameState.handPosition.x - 50) + 'px';
+            invisibleHand.style.top = (gameState.handPosition.y - 50) + 'px';
+        }
+
+        // End game
+        function endGame(success) {
+            gameState.isPlaying = false;
+            clearInterval(gameState.gameInterval);
+            clearInterval(gameState.attemptInterval);
+            
+            if (success) {
+                showMessage(`Поздравляем! Вы продержались ${gameState.restTime.toFixed(1)} секунд!`);
+            } else {
+                showMessage('Персонаж встал! Игра окончена.');
+            }
+            
+            document.getElementById('startBtn').textContent = '🔄 Играть снова';
+            document.getElementById('startBtn').onclick = startGame;
+        }
+
+        // Initialize hand dragging
+        function initHandDragging() {
+            let isDragging = false;
+            let dragStartX = 0;
+            let dragStartY = 0;
+            let handStartX = 0;
+            let handStartY = 0;
+            
+            invisibleHand.addEventListener('mousedown', startDrag);
+            invisibleHand.addEventListener('touchstart', startDragTouch);
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', dragTouch);
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+            
+            function startDrag(e) {
+                isDragging = true;
+                const rect = invisibleHand.getBoundingClientRect();
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                handStartX = rect.left;
+                handStartY = rect.top;
+                e.preventDefault();
+            }
+            
+            function startDragTouch(e) {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    const rect = invisibleHand.getBoundingClientRect();
+                    dragStartX = e.touches[0].clientX;
+                    dragStartY = e.touches[0].clientY;
+                    handStartX = rect.left;
+                    handStartY = rect.top;
+                    e.preventDefault();
+                }
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                
+                const gameRect = gameArea.getBoundingClientRect();
+                const newX = handStartX + (e.clientX - dragStartX);
+                const newY = handStartY + (e.clientY - dragStartY);
+                
+                // Keep hand within game area
+                const boundedX = Math.max(gameRect.left, Math.min(newX, gameRect.right - 100));
+                const boundedY = Math.max(gameRect.top, Math.min(newY, gameRect.bottom - 100));
+                
+                invisibleHand.style.left = (boundedX - gameRect.left) + 'px';
+                invisibleHand.style.top = (boundedY - gameRect.top) + 'px';
+                
+                gameState.handPosition.x = boundedX - gameRect.left + 50;
+                gameState.handPosition.y = boundedY - gameRect.top + 50;
+                
+                e.preventDefault();
+            }
+            
+            function dragTouch(e) {
+                if (!isDragging || e.touches.length !== 1) return;
+                
+                const gameRect = gameArea.getBoundingClientRect();
+                const newX = handStartX + (e.touches[0].clientX - dragStartX);
+                const newY = handStartY + (e.touches[0].clientY - dragStartY);
+                
+                // Keep hand within game area
+                const boundedX = Math.max(gameRect.left, Math.min(newX, gameRect.right - 100));
+                const boundedY = Math.max(gameRect.top, Math.min(newY, gameRect.bottom - 100));
+                
+                invisibleHand.style.left = (boundedX - gameRect.left) + 'px';
+                invisibleHand.style.top = (boundedY - gameRect.top) + 'px';
+                
+                gameState.handPosition.x = boundedX - gameRect.left + 50;
+                gameState.handPosition.y = boundedY - gameRect.top + 50;
+                
+                e.preventDefault();
+            }
+            
+            function stopDrag() {
+                if (!isDragging) return;
+                isDragging = false;
+            }
+            
+            // Click/tap to push character
+            invisibleHand.addEventListener('click', pushCharacter);
+            invisibleHand.addEventListener('touchend', function(e) {
+                if (!isDragging) {
+                    pushCharacter();
+                }
+            });
+        }
+
+        // Push character back to couch
+        function pushCharacter() {
+            if (!gameState.isPlaying) return;
+            
+            // Calculate distance between hand and character
+            const charRect = character.getBoundingClientRect();
+            const handRect = invisibleHand.getBoundingClientRect();
+            
+            const charCenterX = charRect.left + charRect.width / 2;
+            const charCenterY = charRect.top + charRect.height / 2;
+            const handCenterX = handRect.left + handRect.width / 2;
+            const handCenterY = handRect.top + handRect.height / 2;
+            
+            const distance = Math.sqrt(
+                Math.pow(charCenterX - handCenterX, 2) + 
+                Math.pow(charCenterY - handCenterY, 2)
+            );
+            
+            // If hand is close enough to character
+            if (distance < 100) {
+                gameState.pushCount++;
+                
+                // Gentle push animation
+                character.style.transition = 'transform 0.3s ease';
+                character.style.transform = 'translateX(-50%) translateY(10px)';
+                
+                // Reduce character attempts (successful push)
+                if (gameState.characterAttempts > 0) {
+                    gameState.characterAttempts = Math.max(0, gameState.characterAttempts - 1);
+                }
+                
+                showThought("Ой... ладно, полежу еще");
+                
+                // Reset character position
+                setTimeout(() => {
+                    if (gameState.isPlaying) {
+                        character.style.transform = 'translateX(-50%)';
+                    }
+                }, 300);
+                
+                // Visual feedback for push
+                invisibleHand.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    invisibleHand.style.transform = 'scale(1)';
+                }, 100);
+                
+                // Check if push was too strong
+                if (distance < 30) {
+                    showMessage('Слишком сильно! Будьте нежнее!');
+                    gameState.characterAttempts += 2; // Penalty for strong push
+                }
+            }
+        }
+
+        // Initialize game
+        function initGame() {
+            selectCharacter('male');
+            initHandDragging();
+            
+            // Add some initial styling
+            invisibleHand.style.left = '50%';
+            invisibleHand.style.top = '50%';
+            
+            showMessage('Выберите персонажа и нажмите "Начать игру"!');
+        }
+
+        // Start initialization when page loads
+        window.addEventListener('DOMContentLoaded', initGame);
+
+        // Prevent context menu on hand
+        invisibleHand.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+    </script>
+</body>
+</html>
