@@ -27,6 +27,7 @@
         .notification { position: fixed; top: 20px; right: 20px; background: white; color: #333; padding: 15px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; }
         .notification.show { display: block; animation: slideIn 0.5s; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         @media (max-width: 768px) { .container { padding: 10px; } h1 { font-size: 2em; } .stats { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -88,19 +89,28 @@
             "Толчки становятся нежнее со временем",
             "Каждая 7-я секунда особенная",
             "Правила меняются с уровнем абсурда",
-            "Чем дольше играешь, тем меньше понимаешь"
+            "Чем дольше играешь, тем меньше понимаешь",
+            "Иногда очки уходят в минус - это нормально",
+            "13-й толчок всегда проклят",
+            "Отрицательные очки любят полнолуние",
+            "Минус может стать плюсом если верить",
+            "Чем больше минус, тем ближе к прозрению",
+            "Каждое 5-е нажатие после 30с меняет знак",
+            "Очки ниже -100 дают секретные бонусы",
+            "Минус - это просто плюс с другой стороны",
+            "Если очки отрицательные - вы близки к истине",
+            "Дно в -500 очков - дальше только вверх"
         ];
         
         function showRule() {
-            document.getElementById('notif').textContent = "Правило: " + rules[Math.floor(Math.random() * rules.length)];
-            document.getElementById('notif').classList.add('show');
-            setTimeout(() => document.getElementById('notif').classList.remove('show'), 3000);
+            const rule = rules[Math.floor(Math.random() * rules.length)];
+            showNotification('Странное правило', rule);
         }
         
         function selectCharacter(char) {
             game.char = char;
             document.getElementById('character').style.background = char === 'chill' ? '#4ecdc4' : '#ff6b6b';
-            showNotification('Выбран ' + (char === 'chill' ? 'Чилли 😌' : 'Энерджи ⚡'));
+            showNotification('Персонаж выбран', char === 'chill' ? 'Чилли 😌' : 'Энерджи ⚡');
         }
         
         function startGame() {
@@ -123,7 +133,7 @@
             }, 1000);
             
             setupHand();
-            showNotification('Игра началась! Перетаскивайте руку и нажимайте на ней когда рядом с персонажем.');
+            showNotification('Игра началась!', 'Перетаскивайте руку и нажимайте на ней когда рядом с персонажем.');
         }
         
         function setupHand() {
@@ -160,27 +170,75 @@
             );
             
             if (distance < 100) {
-                // Абсурдная формула очков
+                // Абсурдная формула очков - иногда в плюс, иногда в минус!
                 const timeBonus = Math.floor(game.time / 10);
                 const absurdMul = 1 + (game.absurd * 0.1);
                 const charMul = game.char === 'angry' ? 1.3 : 1.2;
                 const pushBonus = (game.pushes % 7 === 0) ? 2 : 1;
-                const random = 0.8 + Math.random() * 0.4;
                 
-                game.score += Math.floor((10 + timeBonus) * absurdMul * charMul * pushBonus * random);
+                // Случайное направление: 70% шанс на плюс, 30% на минус
+                const direction = Math.random() > 0.3 ? 1 : -1;
                 
-                // Анимация толчка
+                // Сила эффекта: от -50 до +50 очков
+                const basePoints = 5 + Math.random() * 45;
+                const randomFactor = 0.5 + Math.random();
+                
+                let pointsChange = Math.floor(
+                    basePoints * 
+                    absurdMul * 
+                    charMul * 
+                    pushBonus * 
+                    randomFactor * 
+                    direction
+                );
+                
+                // Особые случаи:
+                // 1. Каждое 13-е нажатие - большой минус
+                if (game.pushes % 13 === 0) {
+                    pointsChange = -Math.floor(100 + Math.random() * 200);
+                    showNotification('Проклятие 13-го толчка!', 'Большой минус!');
+                }
+                // 2. Каждое 5-е нажатие после 30 секунд - переменный знак
+                else if (game.time > 30 && game.pushes % 5 === 0) {
+                    pointsChange *= (Math.random() > 0.5 ? 2 : -2);
+                }
+                // 3. Если очки отрицательные, шанс на восстановление
+                else if (game.score < 0 && Math.random() > 0.6) {
+                    pointsChange = Math.abs(pointsChange) * 2;
+                    showNotification('Реабилитация!', 'Очки восстанавливаются из минуса');
+                }
+                
+                game.score += pointsChange;
+                
+                // Не даем уйти слишком глубоко в минус (максимум -500)
+                if (game.score < -500) {
+                    game.score = -500;
+                    showNotification('Дно достигнуто!', 'Минус 500 - дальше нельзя!');
+                }
+                
+                // Анимация толчка (разная для плюса и минуса)
                 char.style.transform = 'translateX(-50%) scale(1.2)';
-                char.style.background = '#ff6b6b';
+                if (pointsChange >= 0) {
+                    char.style.background = '#ff6b6b'; // Красный для плюса
+                    showNotification(`+${pointsChange} очков`, pointsChange > 50 ? 'Отличный толчок!' : 'Неплохо!');
+                } else {
+                    char.style.background = '#667eea'; // Синий для минуса
+                    showNotification(`${pointsChange} очков`, 'Ой, минус! Странные правила...');
+                }
+                
                 setTimeout(() => {
                     char.style.transform = 'translateX(-50%)';
                     char.style.background = game.char === 'chill' ? '#4ecdc4' : '#ff6b6b';
                 }, 300);
                 
                 updateDisplay();
-                if (Math.random() > 0.7) showRule();
+                
+                // Случайное правило (чаще при отрицательных очках)
+                if (Math.random() > 0.7 || pointsChange < 0) {
+                    showRule();
+                }
             } else {
-                showNotification('Подведите руку ближе к персонажу!');
+                showNotification('Слишком далеко!', 'Подведите руку ближе к персонажу!');
             }
         }
         
@@ -188,15 +246,48 @@
             if (!game.playing) return;
             game.paused = !game.paused;
             document.getElementById('pauseBtn').textContent = game.paused ? '▶️ Продолжить' : '⏸️ Пауза';
-            showNotification(game.paused ? 'Игра на паузе' : 'Продолжаем!');
+            showNotification(game.paused ? 'Игра на паузе' : 'Продолжаем!', game.paused ? 'Правила ждут...' : 'Абсурд продолжается!');
         }
         
         function updateDisplay() {
             document.getElementById('time').textContent = game.time;
-            document.getElementById('score').textContent = game.score;
+            
+            // Отображение очков с цветом
+            const scoreElement = document.getElementById('score');
+            const myScoreElement = document.getElementById('myScore');
+            
+            if (game.score >= 0) {
+                scoreElement.textContent = game.score;
+                scoreElement.style.color = '#4ecdc4'; // Зеленый для плюса
+                myScoreElement.textContent = game.score;
+                myScoreElement.style.color = '#4ecdc4';
+            } else {
+                scoreElement.textContent = game.score;
+                scoreElement.style.color = '#ff6b6b'; // Красный для минуса
+                myScoreElement.textContent = game.score;
+                myScoreElement.style.color = '#ff6b6b';
+                
+                // Особые эффекты для глубокого минуса
+                if (game.score < -100) {
+                    scoreElement.style.fontWeight = 'bold';
+                    scoreElement.style.textShadow = '0 0 10px #ff6b6b';
+                }
+                if (game.score < -300) {
+                    scoreElement.style.animation = 'pulse 0.5s infinite';
+                }
+            }
+            
             document.getElementById('pushes').textContent = game.pushes;
             document.getElementById('absurd').textContent = game.absurd;
-            document.getElementById('myScore').textContent = game.score;
+            
+            // Обновляем лидерборд если очки отрицательные
+            if (game.score < 0) {
+                document.getElementById('leaderboard').innerHTML = `
+                    1. Ты: <span style="color:#ff6b6b">${game.score}</span> очков<br>
+                    2. Бездна: -∞<br>
+                    3. Пропасть: ???
+                `;
+            }
         }
         
         function shareGame() {
@@ -214,13 +305,18 @@
             const input = document.getElementById('gameLink');
             input.select();
             document.execCommand('copy');
-            showNotification('Ссылка скопирована в буфер!');
+            showNotification('Ссылка скопирована!', 'Теперь можете поделиться игрой с друзьями.');
         }
         
-        function showNotification(msg) {
-            document.getElementById('notif').textContent = msg;
-            document.getElementById('notif').classList.add('show');
-            setTimeout(() => document.getElementById('notif').classList.remove('show'), 3000);
+        function showNotification(title, message = '') {
+            const notif = document.getElementById('notif');
+            if (message) {
+                notif.innerHTML = `<strong>${title}</strong><br>${message}`;
+            } else {
+                notif.textContent = title;
+            }
+            notif.classList.add('show');
+            setTimeout(() => notif.classList.remove('show'), 3000);
         }
         
         // Горячие клавиши
@@ -236,7 +332,7 @@
         // Инициализация
         selectCharacter('chill');
         document.getElementById('gameLink').value = window.location.href;
-        showNotification('Добро пожаловать в Couch Guardian! Перетаскивайте руку и нажимайте на ней когда рядом с персонажем.');
+        showNotification('Добро пожаловать!', 'Перетаскивайте руку и нажимайте на ней когда рядом с персонажем.');
     </script>
 </body>
 </html>
