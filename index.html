@@ -1,3 +1,11 @@
+                setTimeout(() => {
+                    personContainerEl.classList.remove('push-effect');
+                }, 300);
+                
+                // Calculate points
+                points = calculateAbsurdPoints(false);
+                score += points;
+                
                 // Calculate patience change
                 patienceChange = calculatePatienceChange(false);
                 patience = Math.max(0, patience + patienceChange);
