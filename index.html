@@ -1,76 +1,339 @@
-            } else if (gameState.score < 0) {
-                scoreDisplay.className = 'score-display score-negative';
-            } else {
-                scoreDisplay.className = 'score-display';
-            }
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couch Guardian - Играй сразу!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        .game-container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .score {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4ecdc4;
+        }
+        .score.negative {
+            color: #ff6b6b;
+        }
+        .character {
+            font-size: 8rem;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .character:hover {
+            transform: scale(1.1);
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .btn:hover {
+            background: #764ba2;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        .rules {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .rules h3 {
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+        .rules ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .rules li {
+            margin: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .rules li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #4ecdc4;
+        }
+        @media (max-width: 600px) {
+            .character { font-size: 6rem; }
+            .score { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🛋️ Couch Guardian</h1>
+        <p>Толкай диван, набирай очки (иногда уходят в минус!)</p>
+        
+        <div class="score" id="score">0</div>
+        
+        <div class="character" id="character" onclick="push()">
+            🛋️
+        </div>
+        
+        <button class="btn" onclick="push()">
+            👊 Толкнуть (Space/Enter)
+        </button>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="pushes">0</div>
+                <div class="stat-label">Толчков</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="time">0s</div>
+                <div class="stat-label">Время</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="best">0</div>
+                <div class="stat-label">Рекорд</div>
+            </div>
+        </div>
+        
+        <button class="btn" onclick="resetGame()" style="background: #ff6b6b;">
+            🔄 Сброс (R)
+        </button>
+        
+        <div class="rules">
+            <h3>📜 Абсурдные правила:</h3>
+            <ul>
+                <li>Толкай диван чтобы набрать очки</li>
+                <li>70% шанс + очки, 30% шанс - очки</li>
+                <li>13-й толчок всегда -100 очков (проклят!)</li>
+                <li>После 30 секунд 5-й толчок меняет знак</li>
+                <li>Из минуса можно выйти (30% шанс удвоить очки)</li>
+                <li>Минимальный счет: -500 очков</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let score = 0;
+        let pushes = 0;
+        let time = 0;
+        let best = localStorage.getItem('couch_best') || 0;
+        let isPlaying = true;
+        
+        // DOM elements
+        const scoreEl = document.getElementById('score');
+        const pushesEl = document.getElementById('pushes');
+        const timeEl = document.getElementById('time');
+        const bestEl = document.getElementById('best');
+        const characterEl = document.getElementById('character');
+        
+        // Initialize
+        function init() {
+            bestEl.textContent = best;
             
-            // Update pushes count
-            document.getElementById('pushesCount').textContent = gameState.pushes;
+            // Game timer
+            setInterval(() => {
+                if (isPlaying) {
+                    time++;
+                    timeEl.textContent = time + 's';
+                    
+                    // Special rule notification
+                    if (time === 30) {
+                        showMessage('⚠️ Внимание! После 30 секунд 5-й толчок меняет знак!');
+                    }
+                }
+            }, 1000);
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    push();
+                    e.preventDefault();
+                } else if (e.code === 'KeyR') {
+                    resetGame();
+                } else if (e.code === 'Escape') {
+                    isPlaying = !isPlaying;
+                    showMessage(isPlaying ? '▶️ Игра продолжается' : '⏸️ Игра на паузе');
+                }
+            });
+            
+            console.log('🎮 Couch Guardian запущен!');
         }
         
+        // Push the character
+        function push() {
+            if (!isPlaying) return;
+            
+            pushes++;
+            pushesEl.textContent = pushes;
+            
+            // Calculate points with absurd rules
+            let points = calculatePoints();
+            score += points;
+            
+            // Update display
+            updateDisplay();
+            
+            // Animation
+            characterEl.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                characterEl.style.transform = 'scale(1)';
+            }, 200);
+            
+            // Check special events
+            checkSpecialEvents();
+            
+            // Update best score
+            if (score > best) {
+                best = score;
+                bestEl.textContent = best;
+                localStorage.setItem('couch_best', best);
+                
+                if (score > 100) {
+                    showMessage('🏆 Новый рекорд! ' + score + ' очков!');
+                }
+            }
+        }
+        
+        // Calculate points with absurd rules
+        function calculatePoints() {
+            let points = 0;
+            
+            // Base: 70% positive, 30% negative
+            const isPositive = Math.random() < 0.7;
+            const basePoints = Math.floor(Math.random() * 50) + 10;
+            
+            points = isPositive ? basePoints : -basePoints;
+            
+            // Rule 1: 13th push is always cursed
+            if (pushes === 13) {
+                points = -100;
+                showMessage('👻 ПРОКЛЯТИЕ! 13-й толчок = -100 очков!');
+            }
+            
+            // Rule 2: After 30 seconds, 5th push changes sign
+            if (time >= 30 && pushes % 5 === 0) {
+                points = -Math.abs(points);
+                showMessage('🔄 Смена знака! 5-й толчок после 30 секунд');
+            }
+            
+            // Rule 3: Recovery from negative scores (30% chance)
+            if (score < 0 && Math.random() < 0.3) {
+                points = Math.abs(points) * 2;
+                showMessage('📈 Восстановление! Вы выходите из минуса!');
+            }
+            
+            // Rule 4: Minimum score is -500
+            if (score + points < -500) {
+                points = -500 - score;
+                showMessage('🚫 Достигнут минимум: -500 очков');
+            }
+            
+            return points;
+        }
+        
+        // Update score display
+        function updateDisplay() {
+            scoreEl.textContent = score;
+            
+            // Color coding
+            if (score > 0) {
+                scoreEl.className = 'score';
+                scoreEl.style.color = '#4ecdc4';
+            } else if (score < 0) {
+                scoreEl.className = 'score negative';
+                scoreEl.style.color = '#ff6b6b';
+            } else {
+                scoreEl.className = 'score';
+                scoreEl.style.color = 'white';
+            }
+        }
+        
+        // Check for special events
         function checkSpecialEvents() {
             // 10th push celebration
-            if (gameState.pushes % 10 === 0) {
-                showNotification('Юбилей!', gameState.pushes + ' толчков!', '🎉');
+            if (pushes % 10 === 0) {
+                showMessage('🎉 Юбилей! ' + pushes + ' толчков!');
             }
             
             // Deep negative warning
-            if (gameState.score < -200) {
-                showNotification('Глубокий минус!', 'Вы близки к прозрению...', '👁️');
+            if (score < -200) {
+                showMessage('👁️ Глубокий минус! Вы близки к прозрению...');
             }
             
             // High score celebration
-            if (gameState.score > 300) {
-                showNotification('Отлично!', '300+ очков!', '🌟');
+            if (score > 300) {
+                showMessage('🌟 Отлично! 300+ очков!');
             }
         }
         
+        // Reset game
         function resetGame() {
-            gameState.score = 0;
-            gameState.pushes = 0;
-            gameState.time = 0;
-            gameState.isPlaying = true;
+            score = 0;
+            pushes = 0;
+            time = 0;
+            isPlaying = true;
             
+            pushesEl.textContent = pushes;
+            timeEl.textContent = time + 's';
             updateDisplay();
-            showNotification('Игра сброшена', 'Начинаем заново!', '🔄');
-        }
-        
-        function showNotification(title, message, emoji) {
-            console.log(emoji + ' ' + title + ': ' + message);
             
-            // In a real implementation, this would show a UI notification
-            // For now, we just log to console and could use TTS
+            showMessage('🔄 Игра сброшена! Начинаем заново!');
         }
         
-        // ========== KEYBOARD CONTROLS ==========
-        document.addEventListener('keydown', (e) => {
-            switch(e.code) {
-                case 'Space':
-                case 'Enter':
-                    pushCharacter();
-                    e.preventDefault();
-                    break;
-                case 'KeyR':
-                    resetGame();
-                    break;
-                case 'Escape':
-                    gameState.isPlaying = !gameState.isPlaying;
-                    showNotification(
-                        gameState.isPlaying ? 'Игра продолжается' : 'Игра на паузе',
-                        gameState.isPlaying ? 'Продолжаем!' : 'Нажми ESC чтобы продолжить',
-                        gameState.isPlaying ? '▶️' : '⏸️'
-                    );
-                    break;
-            }
-        });
+        // Show message (in console for now)
+        function showMessage(msg) {
+            console.log(msg);
+            // In a real game, this would show a UI notification
+        }
         
-        // ========== START GAME ==========
+        // Start the game
         window.addEventListener('DOMContentLoaded', init);
-        
-        console.log('🎮 Couch Guardian - Direct Game Loaded!');
-        console.log('🎯 Цель: Не дать персонажу встать с дивана');
-        console.log('🎮 Управление: Клик/тап на диван или кнопку "Толкнуть"');
-        console.log('⌨️ Горячие клавиши: Space/Enter - толкнуть, R - сброс, ESC - пауза');
     </script>
 </body>
 </html>
