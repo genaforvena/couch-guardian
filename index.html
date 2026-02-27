@@ -3,336 +3,1322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛋️ Couch Guardian - Играй сейчас!</title>
-    <meta name="description" content="Абсурдная игра где нужно не давать персонажу встать с дивана. Странные правила, лидерборд, делитесь с друзьями!">
+    <title>🛋️ Couch Guardian Pro - Качественные анимации</title>
+    <meta name="description" content="Абсурдная игра с анимациями уровня Flappy Bird. Плавная физика, отзывчивое управление, профессиональный геймплей.">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Arial', sans-serif; }
-        body { background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; color: white; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; padding: 40px 20px; }
-        h1 { font-size: 3em; margin-bottom: 10px; }
-        .subtitle { font-size: 1.2em; opacity: 0.9; margin-bottom: 30px; }
-        .game-area { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 30px; margin-bottom: 30px; }
-        .couch-container { position: relative; height: 300px; background: linear-gradient(45deg, #8b4513, #a0522d); border-radius: 15px; margin: 20px 0; border: 5px solid #654321; }
-        .couch { position: absolute; bottom: 0; left: 0; right: 0; height: 80px; background: #654321; }
-        .character { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); width: 60px; height: 100px; background: #4ecdc4; border-radius: 30px; transition: all 0.3s; }
-        .hand { position: absolute; width: 50px; height: 50px; background: rgba(255,255,255,0.3); border-radius: 50%; border: 2px dashed white; cursor: move; }
-        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px 0; }
-        .stat { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; text-align: center; }
-        .stat-value { font-size: 2em; font-weight: bold; margin: 5px 0; }
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-        button { padding: 12px 24px; border: none; border-radius: 25px; background: #ff6b6b; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { transform: translateY(-2px); }
-        .share { text-align: center; margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 15px; }
-        .notification { position: fixed; top: 20px; right: 20px; background: white; color: #333; padding: 15px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; }
-        .notification.show { display: block; animation: slideIn 0.5s; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        @media (max-width: 768px) { .container { padding: 10px; } h1 { font-size: 2em; } .stats { grid-template-columns: 1fr; } }
+        /* Reset и базовые стили */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            user-select: none;
+        }
+        
+        /* Контейнер игры */
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Заголовок */
+        .game-header {
+            text-align: center;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        
+        .game-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+            letter-spacing: -0.5px;
+        }
+        
+        .game-subtitle {
+            font-size: 1rem;
+            opacity: 0.8;
+            font-weight: 400;
+            max-width: 400px;
+            margin: 0 auto;
+            line-height: 1.4;
+        }
+        
+        /* Игровая зона */
+        .game-play-area {
+            position: relative;
+            height: 320px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                inset 0 0 40px rgba(0, 0, 0, 0.5),
+                0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Диван */
+        .couch {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to top, #8b4513 0%, #a0522d 100%);
+            border-top: 12px solid #654321;
+            box-shadow: 
+                inset 0 10px 20px rgba(0, 0, 0, 0.3),
+                0 -5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+        
+        .couch-cushion {
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            right: 20px;
+            height: 20px;
+            background: #a0522d;
+            border-radius: 10px 10px 0 0;
+            box-shadow: inset 0 -5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Персонаж */
+        .character {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 110px;
+            border-radius: 35px 35px 20px 20px;
+            z-index: 3;
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: transform;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+        }
+        
+        .character.chill {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            box-shadow: 
+                inset 0 -10px 20px rgba(255, 255, 255, 0.2),
+                0 10px 30px rgba(78, 205, 196, 0.4);
+        }
+        
+        .character.angry {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            box-shadow: 
+                inset 0 -10px 20px rgba(255, 255, 255, 0.2),
+                0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+        
+        .character-face {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+        
+        /* Рука */
+        .hand {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3));
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            cursor: grab;
+            z-index: 10;
+            user-select: none;
+            touch-action: none;
+            box-shadow: 
+                0 10px 30px rgba(255, 255, 255, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.5);
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: transform, left, top;
+        }
+        
+        .hand:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.4));
+        }
+        
+        .hand-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.8rem;
+            opacity: 0.9;
+        }
+        
+        /* Эффекты частиц */
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+        }
+        
+        .particle.positive {
+            background: radial-gradient(circle, #4ecdc4, transparent);
+            box-shadow: 0 0 10px #4ecdc4;
+        }
+        
+        .particle.negative {
+            background: radial-gradient(circle, #ff6b6b, transparent);
+            box-shadow: 0 0 10px #ff6b6b;
+        }
+        
+        /* Статистика */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 4px 0;
+            font-variant-numeric: tabular-nums;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .stat-value.positive {
+            color: #4ecdc4;
+            text-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+        }
+        
+        .stat-value.negative {
+            color: #ff6b6b;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+            animation: scorePulse 0.6s ease;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Управление */
+        .controls-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .game-button {
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            user-select: none;
+            will-change: transform;
+        }
+        
+        .game-button:active {
+            transform: scale(0.95);
+        }
+        
+        .game-button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .game-button.success {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+        }
+        
+        .game-button.warning {
+            background: linear-gradient(135deg, #ffd93d 0%, #ffb142 100%);
+            color: #2d3436;
+            box-shadow: 0 8px 25px rgba(255, 217, 61, 0.4);
+        }
+        
+        .game-button.danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+        
+        .game-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #2d3436;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            max-width: 320px;
+            z-index: 1000;
+            transform: translateX(120%) scale(0.9);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border-left: 6px solid #4ecdc4;
+            backdrop-filter: blur(20px);
+        }
+        
+        .notification.show {
+            transform: translateX(0) scale(1);
+            opacity: 1;
+        }
+        
+        .notification-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .notification-message {
+            font-size: 0.95rem;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+        
+        /* Анимации */
+        @keyframes scorePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes characterBounce {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+        
+        @keyframes handPulse {
+            0% { box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3); }
+            50% { box-shadow: 0 10px 40px rgba(255, 255, 255, 0.6); }
+            100% { box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3); }
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 16px;
+                border-radius: 20px;
+            }
+            
+            .game-title {
+                font-size: 2.2rem;
+            }
+            
+            .game-play-area {
+                height: 280px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .controls-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .notification {
+                top: 16px;
+                right: 16px;
+                left: 16px;
+                max-width: none;
+            }
+        }
+        
+        /* Эффект параллакса для фона */
+        .bg-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        .bg-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: bgFloat 20s infinite linear;
+        }
+        
+        @keyframes bgFloat {
+            0% { transform: translateY(100vh) translateX(0); }
+            100% { transform: translateY(-100px) translateX(100px); }
+        }
+        
+        /* Индикатор близости */
+        .proximity-indicator {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .proximity-indicator.visible {
+            opacity: 1;
+        }
+        
+        /* Эффект успеха */
+        .success-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(78, 205, 196, 0.3), transparent 70%);
+            pointer-events: none;
+            z-index: 6;
+            opacity: 0;
+        }
+        
+        /* Эффект провала */
+        .fail-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255, 107, 107, 0.3), transparent 70%);
+            pointer-events: none;
+            z-index: 6;
+            opacity: 0;
+        }
+        
+        /* Подсказка */
+        .hint {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 7;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+        }
+        
+        .hint.visible {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
-    <div class="notification" id="notif">Сообщение</div>
-    <div class="container">
-        <header>
-            <h1>🛋️ Couch Guardian</h1>
-            <div class="subtitle">Абсурдная игра с неясными правилами. Не дай встать с дивана!</div>
-        </header>
+    <!-- Фоновые частицы -->
+    <div class="bg-particles" id="bgParticles"></div>
+    
+    <!-- Уведомления -->
+    <div class="notification" id="notification">
+        <div class="notification-title">
+            <span id="notificationIcon">ℹ️</span>
+            <span id="notificationTitle">Уведомление</span>
+        </div>
+        <div class="notification-message" id="notificationMessage">Сообщение</div>
+    </div>
+    
+    <!-- Основной контейнер -->
+    <div class="game-container">
+        <!-- Заголовок -->
+        <div class="game-header">
+            <h1 class="game-title">🛋️ Couch Guardian</h1>
+            <div class="game-subtitle">Качественные анимации • Плавная физика • Абсурдные правила</div>
+        </div>
         
-        <div class="game-area">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <button onclick="selectCharacter('chill')" style="background:#4ecdc4;">😌 Чилли</button>
-                <button onclick="selectCharacter('angry')" style="background:#ff6b6b;">⚡ Энерджи</button>
+        <!-- Игровая зона -->
+        <div class="game-play-area" id="gameArea">
+            <!-- Эффекты -->
+            <div class="success-flash" id="successFlash"></div>
+            <div class="fail-flash" id="failFlash"></div>
+            <div class="proximity-indicator" id="proximityIndicator"></div>
+            <div class="hint" id="hint">Перетащите руку к персонажу</div>
+            
+            <!-- Диван -->
+            <div class="couch">
+                <div class="couch-cushion"></div>
             </div>
             
-            <div class="couch-container" id="couch">
-                <div class="couch"></div>
-                <div class="character" id="character"></div>
-                <div class="hand" id="hand" style="left:50%; top:50%;">👋</div>
+            <!-- Персонаж -->
+            <div class="character chill" id="character">
+                <div class="character-face">😌</div>
             </div>
             
-            <div class="stats">
-                <div class="stat"><div>⏱️ Секунд</div><div class="stat-value" id="time">0</div></div>
-                <div class="stat"><div>😌 Очки</div><div class="stat-value" id="score">0</div></div>
-                <div class="stat"><div>👋 Толчки</div><div class="stat-value" id="pushes">0</div></div>
-                <div class="stat"><div>🎭 Абсурд</div><div class="stat-value" id="absurd">1</div></div>
+            <!-- Рука -->
+            <div class="hand" id="hand">
+                <div class="hand-icon">👋</div>
             </div>
             
-            <div class="controls">
-                <button onclick="startGame()" id="startBtn">🎮 Начать</button>
-                <button onclick="pushNow()" id="pushBtn">👋 Толкнуть (Пробел)</button>
-                <button onclick="pauseGame()" id="pauseBtn">⏸️ Пауза</button>
-                <button onclick="shareGame()" style="background:#25D366;">📱 Поделиться</button>
+            <!-- Частицы будут добавляться динамически -->
+        </div>
+        
+        <!-- Статистика -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="timeValue">0</div>
+                <div class="stat-label">Секунд</div>
             </div>
             
-            <div class="share">
-                <h3>🏆 Топ игроков:</h3>
-                <div id="leaderboard" style="margin: 15px 0; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px;">
-                    1. Ты: <span id="myScore">0</span> очков<br>
-                    2. Воображаемый друг: ???<br>
-                    3. Кот на диване: ∞
-                </div>
-                <p>Ссылка на игру: <input type="text" id="gameLink" value="Загрузи на GitHub Pages чтобы получить ссылку" readonly style="width:100%; padding:10px; margin:10px 0; border-radius:5px; border:none;">
-                <button onclick="copyLink()" style="background:#667eea; width:100%;">📋 Скопировать ссылку</button>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value positive" id="scoreValue">0</div>
+                <div class="stat-label">Очки</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">👋</div>
+                <div class="stat-value" id="pushesValue">0</div>
+                <div class="stat-label">Толчки</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🌀</div>
+                <div class="stat-value" id="absurdValue">1</div>
+                <div class="stat-label">Абсурд</div>
             </div>
         </div>
         
-        <div style="text-align:center; margin-top:30px; opacity:0.8; font-size:0.9em;">
-            Игра создана с ❤️ и абсурдом | Версия 1.0 | <a href="#" onclick="showRule()" style="color:#ffd93d; text-decoration:none;">🤔 Правила</a>
+        <!-- Управление -->
+        <div class="controls-container">
+            <button class="game-button primary" id="startButton" onclick="startGame()">
+                <span>🎮</span> Начать
+            </button>
+            
+            <button class="game-button success" id="pushButton" onclick="pushCharacter()">
+                <span>👋</span> Толкнуть
+            </button>
+            
+            <button class="game-button warning" id="pauseButton" onclick="togglePause()">
+                <span>⏸️</span> Пауза
+            </button>
+            
+            <button class="game-button danger" id="shareButton" onclick="shareGame()">
+                <span>📱</span> Поделиться
+            </button>
+        </div>
+        
+        <!-- Информация -->
+        <div style="text-align: center; opacity: 0.7; font-size: 0.85rem; margin-top: 20px;">
+            <div>Используйте <strong>ПРОБЕЛ</strong> для быстрого толчка • Перетаскивайте руку</div>
+            <div style="margin-top: 8px;">Очки могут быть отрицательными • 13-й толчок проклят</div>
         </div>
     </div>
-
+    
     <script>
-        let game = { playing: false, paused: false, time: 0, score: 0, pushes: 0, absurd: 1, char: 'chill', timer: null };
-        const rules = [
-            "Очки растут по секретной формуле",
-            "Толчки становятся нежнее со временем",
-            "Каждая 7-я секунда особенная",
-            "Правила меняются с уровнем абсурда",
-            "Чем дольше играешь, тем меньше понимаешь",
-            "Иногда очки уходят в минус - это нормально",
-            "13-й толчок всегда проклят",
-            "Отрицательные очки любят полнолуние",
-            "Минус может стать плюсом если верить",
-            "Чем больше минус, тем ближе к прозрению",
-            "Каждое 5-е нажатие после 30с меняет знак",
-            "Очки ниже -100 дают секретные бонусы",
-            "Минус - это просто плюс с другой стороны",
-            "Если очки отрицательные - вы близки к истине",
-            "Дно в -500 очков - дальше только вверх"
-        ];
+        // ========== КОНФИГУРАЦИЯ ==========
+        const CONFIG = {
+            physics: {
+                pushForce: 0.8,          // Сила толчка (0-1)
+                bounceDamping: 0.7,      // Затухание отскока
+                gravity: 0.05,           // Гравитация персонажа
+                handSpeed: 0.15          // Скорость следования руки
+            },
+            visuals: {
+                particleCount: 12,       // Количество частиц за эффект
+                screenShakeIntensity: 5, // Интенсивность тряски экрана
+                flashDuration: 300,      // Длительность вспышки
+                hintDuration: 2000       // Длительность подсказки
+            },
+            game: {
+                negativeChance: 0.3,     // Шанс отрицательных очков
+                cursedPush: 13,          // Проклятый толчок
+                absurdIncreaseTime: 30,  // Время для увеличения абсурда
+                maxNegativeScore: -500   // Максимальный минус
+            }
+        };
         
-        function showRule() {
-            const rule = rules[Math.floor(Math.random() * rules.length)];
-            showNotification('Странное правило', rule);
-        }
-        
-        function selectCharacter(char) {
-            game.char = char;
-            document.getElementById('character').style.background = char === 'chill' ? '#4ecdc4' : '#ff6b6b';
-            showNotification('Персонаж выбран', char === 'chill' ? 'Чилли 😌' : 'Энерджи ⚡');
-        }
-        
-        function startGame() {
-            if (game.playing) return;
-            game.playing = true;
-            game.paused = false;
-            game.time = 0;
-            game.score = 0;
-            game.pushes = 0;
-            game.absurd = 1;
-            document.getElementById('startBtn').textContent = '🎮 Игра идет...';
-            document.getElementById('startBtn').disabled = true;
+        // ========== СОСТОЯНИЕ ИГРЫ ==========
+        const gameState = {
+            // Основное состояние
+            isPlaying: false,
+            isPaused: false,
+            selectedCharacter: 'chill',
             
-            game.timer = setInterval(() => {
-                if (!game.paused) {
-                    game.time++;
-                    if (game.time % 30 === 0) game.absurd++;
-                    updateDisplay();
-                }
+            // Статистика
+            time: 0,
+            score: 0,
+            pushes: 0,
+            absurdLevel: 1,
+            
+            // Физика
+            characterVelocity: { x: 0, y: 0 },
+            characterPosition: { x: 0.5, y: 0.5 }, // В процентах от игровой зоны
+            handPosition: { x: 0.5, y: 0.5 },
+            isHandDragging: false,
+            
+            // Таймеры
+            gameTimer: null,
+            physicsTimer: null,
+            lastPushTime: 0,
+            pushCooldown: 300, // мс
+            
+            // Анимации
+            lastFrameTime: 0,
+            animationFrame: null,
+            
+            // Данные игрока
+            playerName: localStorage.getItem('cg_playerName') || 'Игрок',
+            highScore: parseInt(localStorage.getItem('cg_highScore')) || 0
+        };
+        
+        // ========== DOM ЭЛЕМЕНТЫ ==========
+        const elements = {
+            gameArea: document.getElementById('gameArea'),
+            character: document.getElementById('character'),
+            hand: document.getElementById('hand'),
+            proximityIndicator: document.getElementById('proximityIndicator'),
+            hint: document.getElementById('hint'),
+            successFlash: document.getElementById('successFlash'),
+            failFlash: document.getElementById('failFlash'),
+            
+            // Статистика
+            timeValue: document.getElementById('timeValue'),
+            scoreValue: document.getElementById('scoreValue'),
+            pushesValue: document.getElementById('pushesValue'),
+            absurdValue: document.getElementById('absurdValue'),
+            
+            // Кнопки
+            startButton: document.getElementById('startButton'),
+            pushButton: document.getElementById('pushButton'),
+            pauseButton: document.getElementById('pauseButton'),
+            
+            // Уведомления
+            notification: document.getElementById('notification'),
+            notificationIcon: document.getElementById('notificationIcon'),
+            notificationTitle: document.getElementById('notificationTitle'),
+            notificationMessage: document.getElementById('notificationMessage')
+        };
+        
+        // ========== ИНИЦИАЛИЗАЦИЯ ==========
+        function initGame() {
+            // Создаем фоновые частицы
+            createBackgroundParticles();
+            
+            // Настраиваем управление
+            setupControls();
+            
+            // Настраиваем физику
+            setupPhysics();
+            
+            // Настраиваем визуальные эффекты
+            setupVisuals();
+            
+            // Показываем приветственное сообщение
+            setTimeout(() => {
+                showNotification('Добро пожаловать!', 'Перетащите руку к персонажу и нажмите на ней. Используйте ПРОБЕЛ для быстрого толчка.', '🎮');
+                showHint('Перетащите руку к персонажу');
             }, 1000);
             
-            setupHand();
-            showNotification('Игра началась!', 'Перетаскивайте руку и нажимайте на ней когда рядом с персонажем.');
+            // Запускаем игровой цикл
+            requestAnimationFrame(gameLoop);
         }
         
-        function setupHand() {
-            const hand = document.getElementById('hand');
-            const couch = document.getElementById('couch');
-            let dragging = false;
+        // ========== ФОНОВЫЕ ЧАСТИЦЫ ==========
+        function createBackgroundParticles() {
+            const container = document.getElementById('bgParticles');
+            const particleCount = 20;
             
-            hand.addEventListener('mousedown', () => dragging = true);
-            document.addEventListener('mousemove', (e) => {
-                if (!dragging) return;
-                const rect = couch.getBoundingClientRect();
-                hand.style.left = (e.clientX - rect.left - 25) + 'px';
-                hand.style.top = (e.clientY - rect.top - 25) + 'px';
-            });
-            document.addEventListener('mouseup', () => dragging = false);
-            
-            hand.addEventListener('click', pushCharacter);
-        }
-        
-        function pushNow() { if (game.playing && !game.paused) pushCharacter(); }
-        
-        function pushCharacter() {
-            if (!game.playing || game.paused) return;
-            game.pushes++;
-            
-            const hand = document.getElementById('hand');
-            const char = document.getElementById('character');
-            const handRect = hand.getBoundingClientRect();
-            const charRect = char.getBoundingClientRect();
-            
-            const distance = Math.sqrt(
-                Math.pow(handRect.left - charRect.left, 2) + 
-                Math.pow(handRect.top - charRect.top, 2)
-            );
-            
-            if (distance < 100) {
-                // Абсурдная формула очков - иногда в плюс, иногда в минус!
-                const timeBonus = Math.floor(game.time / 10);
-                const absurdMul = 1 + (game.absurd * 0.1);
-                const charMul = game.char === 'angry' ? 1.3 : 1.2;
-                const pushBonus = (game.pushes % 7 === 0) ? 2 : 1;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'bg-particle';
                 
-                // Случайное направление: 70% шанс на плюс, 30% на минус
-                const direction = Math.random() > 0.3 ? 1 : -1;
+                // Случайная позиция
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
                 
-                // Сила эффекта: от -50 до +50 очков
-                const basePoints = 5 + Math.random() * 45;
-                const randomFactor = 0.5 + Math.random();
+                // Случайная задержка анимации
+                particle.style.animationDelay = `${Math.random() * 20}s`;
                 
-                let pointsChange = Math.floor(
-                    basePoints * 
-                    absurdMul * 
-                    charMul * 
-                    pushBonus * 
-                    randomFactor * 
-                    direction
-                );
+                // Случайный размер
+                const size = 2 + Math.random() * 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
                 
-                // Особые случаи:
-                // 1. Каждое 13-е нажатие - большой минус
-                if (game.pushes % 13 === 0) {
-                    pointsChange = -Math.floor(100 + Math.random() * 200);
-                    showNotification('Проклятие 13-го толчка!', 'Большой минус!');
-                }
-                // 2. Каждое 5-е нажатие после 30 секунд - переменный знак
-                else if (game.time > 30 && game.pushes % 5 === 0) {
-                    pointsChange *= (Math.random() > 0.5 ? 2 : -2);
-                }
-                // 3. Если очки отрицательные, шанс на восстановление
-                else if (game.score < 0 && Math.random() > 0.6) {
-                    pointsChange = Math.abs(pointsChange) * 2;
-                    showNotification('Реабилитация!', 'Очки восстанавливаются из минуса');
-                }
-                
-                game.score += pointsChange;
-                
-                // Не даем уйти слишком глубоко в минус (максимум -500)
-                if (game.score < -500) {
-                    game.score = -500;
-                    showNotification('Дно достигнуто!', 'Минус 500 - дальше нельзя!');
-                }
-                
-                // Анимация толчка (разная для плюса и минуса)
-                char.style.transform = 'translateX(-50%) scale(1.2)';
-                if (pointsChange >= 0) {
-                    char.style.background = '#ff6b6b'; // Красный для плюса
-                    showNotification(`+${pointsChange} очков`, pointsChange > 50 ? 'Отличный толчок!' : 'Неплохо!');
-                } else {
-                    char.style.background = '#667eea'; // Синий для минуса
-                    showNotification(`${pointsChange} очков`, 'Ой, минус! Странные правила...');
-                }
-                
-                setTimeout(() => {
-                    char.style.transform = 'translateX(-50%)';
-                    char.style.background = game.char === 'chill' ? '#4ecdc4' : '#ff6b6b';
-                }, 300);
-                
-                updateDisplay();
-                
-                // Случайное правило (чаще при отрицательных очках)
-                if (Math.random() > 0.7 || pointsChange < 0) {
-                    showRule();
-                }
-            } else {
-                showNotification('Слишком далеко!', 'Подведите руку ближе к персонажу!');
+                container.appendChild(particle);
             }
         }
         
-        function pauseGame() {
-            if (!game.playing) return;
-            game.paused = !game.paused;
-            document.getElementById('pauseBtn').textContent = game.paused ? '▶️ Продолжить' : '⏸️ Пауза';
-            showNotification(game.paused ? 'Игра на паузе' : 'Продолжаем!', game.paused ? 'Правила ждут...' : 'Абсурд продолжается!');
+        // ========== УПРАВЛЕНИЕ ==========
+        function setupControls() {
+            // Мышь
+            elements.hand.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Тач
+            elements.hand.addEventListener('touchstart', startDragTouch);
+            document.addEventListener('touchmove', dragTouch);
+            document.addEventListener('touchend', stopDrag);
+            
+            // Клавиатура
+            document.addEventListener('keydown', handleKeyPress);
+            
+            // Клик по руке
+            elements.hand.addEventListener('click', handleHandClick);
+            
+            // Предотвращаем контекстное меню
+            elements.gameArea.addEventListener('contextmenu', e => e.preventDefault());
         }
         
-        function updateDisplay() {
-            document.getElementById('time').textContent = game.time;
-            
-            // Отображение очков с цветом
-            const scoreElement = document.getElementById('score');
-            const myScoreElement = document.getElementById('myScore');
-            
-            if (game.score >= 0) {
-                scoreElement.textContent = game.score;
-                scoreElement.style.color = '#4ecdc4'; // Зеленый для плюса
-                myScoreElement.textContent = game.score;
-                myScoreElement.style.color = '#4ecdc4';
-            } else {
-                scoreElement.textContent = game.score;
-                scoreElement.style.color = '#ff6b6b'; // Красный для минуса
-                myScoreElement.textContent = game.score;
-                myScoreElement.style.color = '#ff6b6b';
-                
-                // Особые эффекты для глубокого минуса
-                if (game.score < -100) {
-                    scoreElement.style.fontWeight = 'bold';
-                    scoreElement.style.textShadow = '0 0 10px #ff6b6b';
-                }
-                if (game.score < -300) {
-                    scoreElement.style.animation = 'pulse 0.5s infinite';
-                }
-            }
-            
-            document.getElementById('pushes').textContent = game.pushes;
-            document.getElementById('absurd').textContent = game.absurd;
-            
-            // Обновляем лидерборд если очки отрицательные
-            if (game.score < 0) {
-                document.getElementById('leaderboard').innerHTML = `
-                    1. Ты: <span style="color:#ff6b6b">${game.score}</span> очков<br>
-                    2. Бездна: -∞<br>
-                    3. Пропасть: ???
-                `;
+        function startDrag(e) {
+            gameState.isHandDragging = true;
+            elements.hand.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+        
+        function startDragTouch(e) {
+            if (e.touches.length === 1) {
+                gameState.isHandDragging = true;
+                e.preventDefault();
             }
         }
         
-        function shareGame() {
-            const url = window.location.href;
-            const text = `🎮 Couch Guardian\nЯ набрал ${game.score} очков в этой абсурдной игре!\nПопробуй разгадать странные правила!\n\nИграть: ${url}`;
+        function drag(e) {
+            if (!gameState.isHandDragging) return;
             
-            if (navigator.share) {
-                navigator.share({ title: 'Couch Guardian', text: text, url: url });
-            } else {
-                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-            }
+            const rect = elements.gameArea.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            
+            updateHandPosition(x, y);
+            updateProximityIndicator();
         }
         
-        function copyLink() {
-            const input = document.getElementById('gameLink');
-            input.select();
-            document.execCommand('copy');
-            showNotification('Ссылка скопирована!', 'Теперь можете поделиться игрой с друзьями.');
+        function dragTouch(e) {
+            if (!gameState.isHandDragging || e.touches.length !== 1) return;
+            
+            const rect = elements.gameArea.getBoundingClientRect();
+            const x = (e.touches[0].clientX - rect.left) / rect.width;
+            const y = (e.touches[0].clientY - rect.top) / rect.height;
+            
+            updateHandPosition(x, y);
+            updateProximityIndicator();
+            
+            e.preventDefault();
         }
         
-        function showNotification(title, message = '') {
-            const notif = document.getElementById('notif');
-            if (message) {
-                notif.innerHTML = `<strong>${title}</strong><br>${message}`;
-            } else {
-                notif.textContent = title;
-            }
-            notif.classList.add('show');
-            setTimeout(() => notif.classList.remove('show'), 3000);
+        function stopDrag() {
+            gameState.isHandDragging = false;
+            elements.hand.style.cursor = 'grab';
         }
         
-        // Горячие клавиши
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && game.playing && !game.paused) {
+        function handleKeyPress(e) {
+            if (e.code === 'Space' && gameState.isPlaying && !gameState.isPaused) {
                 e.preventDefault();
                 pushCharacter();
             }
-            if (e.code === 'KeyP') pauseGame();
-            if (e.code === 'KeyR' && !game.playing) startGame();
-        });
+            
+            if (e.code === 'KeyP') {
+                e.preventDefault();
+                togglePause();
+            }
+            
+            if (e.code === 'KeyR' && !gameState.isPlaying) {
+                e.preventDefault();
+                startGame();
+            }
+        }
         
-        // Инициализация
-        selectCharacter('chill');
-        document.getElementById('gameLink').value = window.location.href;
-        showNotification('Добро пожаловать!', 'Перетаскивайте руку и нажимайте на ней когда рядом с персонажем.');
+        function handleHandClick(e) {
+            if (gameState.isPlaying && !gameState.isPaused) {
+                pushCharacter();
+            }
+        }
+        
+        // ========== ФИЗИКА ==========
+        function setupPhysics() {
+            // Инициализируем позиции
+            updateCharacterPosition();
+            updateHandPosition(0.5, 0.3);
+        }
+        
+        function updateCharacterPosition() {
+            const x = gameState.characterPosition.x * elements.gameArea.offsetWidth;
+            const y = gameState.characterPosition.y * elements.gameArea.offsetHeight;
+            
+            elements.character.style.left = `${x}px`;
+            elements.character.style.bottom = `${y}px`;
+        }
+        
+        function updateHandPosition(x, y) {
+            // Ограничиваем позицию в пределах игровой зоны
+            x = Math.max(0.05, Math.min(0.95, x));
+            y = Math.max(0.05, Math.min(0.95, y));
+            
+            gameState.handPosition.x = x;
+            gameState.handPosition.y = y;
+            
+            const handX = x * elements.gameArea.offsetWidth;
+            const handY = y * elements.gameArea.offsetHeight;
+            
+            elements.hand.style.left = `${handX - elements.hand.offsetWidth / 2}px`;
+            elements.hand.style.top = `${handY - elements.hand.offsetHeight / 2}px`;
+        }
+        
+        function updateProximityIndicator() {
+            const distance = getDistanceToCharacter();
+            const isClose = distance < 100;
+            
+            if (isClose) {
+                elements.proximityIndicator.classList.add('visible');
+                elements.hand.style.animation = 'handPulse 1s infinite';
+                
+                // Позиционируем индикатор вокруг персонажа
+                const charRect = elements.character.getBoundingClientRect();
+                const gameRect = elements.gameArea.getBoundingClientRect();
+                
+                elements.proximityIndicator.style.left = `${charRect.left - gameRect.left - 30}px`;
+                elements.proximityIndicator.style.top = `${charRect.top - gameRect.top - 30}px`;
+            } else {
+                elements.proximityIndicator.classList.remove('visible');
+                elements.hand.style.animation = '';
+            }
+            
+            return isClose;
+        }
+        
+        function getDistanceToCharacter() {
+            const charRect = elements.character.getBoundingClientRect();
+            const handRect = elements.hand.getBoundingClientRect();
+            
+            const charCenterX = charRect.left + charRect.width / 2;
+            const charCenterY = charRect.top + charRect.height / 2;
+            const handCenterX = handRect.left + handRect.width / 2;
+            const handCenterY = handRect.top + handRect.height / 2;
+            
+            return Math.sqrt(
+                Math.pow(charCenterX - handCenterX, 2) +
+                Math.pow(charCenterY - handCenterY, 2)
+            );
+        }
+        
+        // ========== ВИЗУАЛЬНЫЕ ЭФФЕКТЫ ==========
+        function setupVisuals() {
+            // Инициализируем элементы
+        }
+        
+        function createParticles(count, type, x, y) {
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = `particle ${type}`;
+                
+                // Случайная позиция вокруг точки
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 20 + Math.random() * 60;
+                const targetX = Math.cos(angle) * distance;
+                const targetY = Math.sin(angle) * distance;
+                
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.setProperty('--tx', `${targetX}px`);
+                particle.style.setProperty('--ty', `${targetY}px`);
+                
+                // Случайный размер
+                const size = 4 + Math.random() * 8;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Анимация
+                particle.style.animation = `particleFloat 0.8s ease-out forwards`;
+                particle.style.animationDelay = `${Math.random() * 0.2}s`;
+                
+                elements.gameArea.appendChild(particle);
+                
+                // Удаляем частицу после анимации
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1000);
+            }
+        }
+        
+        function showFlash(type) {
+            const flash = type === 'success' ? elements.successFlash : elements.failFlash;
+            
+            flash.style.opacity = '1';
+            flash.style.transition = 'opacity 0.3s ease';
+            
+            setTimeout(() => {
+                flash.style.opacity = '0';
+            }, CONFIG.visuals.flashDuration);
+        }
+        
+        function screenShake(intensity = CONFIG.visuals.screenShakeIntensity) {
+            elements.gameArea.style.animation = `screenShake 0.5s ease`;
+            elements.gameArea.style.transform = `translateX(${intensity}px)`;
+            
+            setTimeout(() => {
+                elements.gameArea.style.animation = '';
+                elements.gameArea.style.transform = '';
+            }, 500);
+        }
+        
+        function showHint(text) {
+            elements.hint.textContent = text;
+            elements.hint.classList.add('visible');
+            
+            setTimeout(() => {
+                elements.hint.classList.remove('visible');
+            }, CONFIG.visuals.hintDuration);
+        }
+        
+        // ========== ИГРОВОЙ ЦИКЛ ==========
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - gameState.lastFrameTime;
+            gameState.lastFrameTime = timestamp;
+            
+            // Обновляем физику если игра активна
+            if (gameState.isPlaying && !gameState.isPaused) {
+                updatePhysics(deltaTime);
+            }
+            
+            // Обновляем анимации
+            updateAnimations(deltaTime);
+            
+            // Продолжаем цикл
+            gameState.animationFrame = requestAnimationFrame(gameLoop);
+        }
+        
+        function updatePhysics(deltaTime) {
+            const dt = deltaTime / 16.67; // Нормализуем к 60 FPS
+            
+            // Гравитация
+            gameState.characterVelocity.y -= CONFIG.physics.gravity * dt;
+            
+            // Обновляем позицию персонажа
+            gameState.characterPosition.x += gameState.characterVelocity.x * dt;
+            gameState.characterPosition.y += gameState.characterVelocity.y * dt;
+            
+            // Ограничиваем позицию (чтобы не вылетел за экран)
+            gameState.characterPosition.x = Math.max(0.1, Math.min(0.9, gameState.characterPosition.x));
+            gameState.characterPosition.y = Math.max(0.1, Math.min(0.9, gameState.characterPosition.y));
+            
+            // Затухание скорости
+            gameState.characterVelocity.x *= CONFIG.physics.bounceDamping;
+            gameState.characterVelocity.y *= CONFIG.physics.bounceDamping;
+            
+            // Если скорость очень маленькая - останавливаем
+            if (Math.abs(gameState.characterVelocity.x) < 0.01) gameState.characterVelocity.x = 0;
+            if (Math.abs(gameState.characterVelocity.y) < 0.01) gameState.characterVelocity.y = 0;
+            
+            // Обновляем визуальную позицию
+            updateCharacterPosition();
+            
+            // Плавное движение руки к цели (если не тащим)
+            if (!gameState.isHandDragging) {
+                const targetX = 0.5;
+                const targetY = 0.3;
+                
+                gameState.handPosition.x += (targetX - gameState.handPosition.x) * CONFIG.physics.handSpeed * dt;
+                gameState.handPosition.y += (targetY - gameState.handPosition.y) * CONFIG.physics.handSpeed * dt;
+                
+                updateHandPosition(gameState.handPosition.x, gameState.handPosition.y);
+            }
+            
+            // Обновляем индикатор близости
+            updateProximityIndicator();
+        }
+        
+        function updateAnimations(deltaTime) {
+            // Здесь можно обновлять дополнительные анимации
+        }
+        
+        // ========== ИГРОВАЯ ЛОГИКА ==========
+        function startGame() {
+            if (gameState.isPlaying) return;
+            
+            gameState.isPlaying = true;
+            gameState.isPaused = false;
+            
+            // Сброс статистики
+            gameState.time = 0;
+            gameState.score = 0;
+            gameState.pushes = 0;
+            gameState.absurdLevel = 1;
+            
+            // Сброс физики
+            gameState.characterVelocity = { x: 0, y: 0 };
+            gameState.characterPosition = { x: 0.5, y: 0.5 };
+            
+            // Обновляем UI
+            elements.startButton.innerHTML = '<span>🎮</span> Игра идет...';
+            elements.startButton.disabled = true;
+            elements.pushButton.disabled = false;
+            elements.pauseButton.innerHTML = '<span>⏸️</span> Пауза';
+            
+            // Запускаем таймер
+            gameState.gameTimer = setInterval(() => {
+                if (!gameState.isPaused) {
+                    gameState.time++;
+                    
+                    // Увеличиваем уровень абсурда
+                    if (gameState.time % CONFIG.game.absurdIncreaseTime === 0) {
+                        gameState.absurdLevel++;
+                        showNotification('Уровень абсурда повышен!', `Теперь: ${gameState.absurdLevel}`, '🌀');
+                    }
+                    
+                    updateStats();
+                }
+            }, 1000);
+            
+            showNotification('Игра началась!', 'Перетащите руку к персонажу и нажмите на ней. Используйте ПРОБЕЛ для быстрого толчка.', '🎮');
+            showHint('Нажмите на руке когда она рядом с персонажем');
+        }
+        
+        function pushCharacter() {
+            if (!gameState.isPlaying || gameState.isPaused) return;
+            
+            // Проверяем кулдаун
+            const now = Date.now();
+            if (now - gameState.lastPushTime < gameState.pushCooldown) return;
+            
+            // Проверяем близость
+            if (!updateProximityIndicator()) {
+                showNotification('Слишком далеко!', 'Подведите руку ближе к персонажу', '⚠️');
+                showHint('Подведите руку ближе');
+                return;
+            }
+            
+            gameState.lastPushTime = now;
+            gameState.pushes++;
+            
+            // Вычисляем изменение очков
+            const pointsChange = calculatePointsChange();
+            gameState.score += pointsChange;
+            
+            // Ограничиваем минимальный счет
+            if (gameState.score < CONFIG.game.maxNegativeScore) {
+                gameState.score = CONFIG.game.maxNegativeScore;
+                showNotification('Дно достигнуто!', `Минус ${CONFIG.game.maxNegativeScore} - дальше нельзя!`, '🕳️');
+                screenShake(10);
+            }
+            
+            // Применяем физику толчка
+            applyPushPhysics();
+            
+            // Визуальные эффекты
+            createVisualEffects(pointsChange);
+            
+            // Обновляем статистику
+            updateStats();
+            
+            // Специальные события
+            checkSpecialEvents();
+        }
+        
+        function calculatePointsChange() {
+            const timeBonus = Math.floor(gameState.time / 10);
+            const absurdMultiplier = 1 + (gameState.absurdLevel * 0.15);
+            const characterMultiplier = gameState.selectedCharacter === 'angry' ? 1.3 : 1.2;
+            
+            // Базовые очки
+            let basePoints = 10 + timeBonus;
+            
+            // Специальные случаи
+            if (gameState.pushes % CONFIG.game.cursedPush === 0) {
+                // Проклятый толчок
+                basePoints = -Math.floor(100 + Math.random() * 200);
+                showNotification('Проклятие 13-го толчка!', 'Большой минус!', '🔮');
+                screenShake(8);
+            } else if (Math.random() < CONFIG.game.negativeChance) {
+                // Случайный минус
+                basePoints = -Math.floor(basePoints * (0.5 + Math.random()));
+            } else if (gameState.score < 0 && Math.random() > 0.6) {
+                // Восстановление из минуса
+                basePoints = Math.abs(basePoints) * 2;
+                showNotification('Реабилитация!', 'Очки восстанавливаются', '📈');
+            }
+            
+            // Применяем множители
+            return Math.floor(basePoints * absurdMultiplier * characterMultiplier);
+        }
+        
+        function applyPushPhysics() {
+            // Направление толчка (от руки к персонажу)
+            const charRect = elements.character.getBoundingClientRect();
+            const handRect = elements.hand.getBoundingClientRect();
+            
+            const charCenterX = charRect.left + charRect.width / 2;
+            const charCenterY = charRect.top + charRect.height / 2;
+            const handCenterX = handRect.left + handRect.width / 2;
+            const handCenterY = handRect.top + handRect.height / 2;
+            
+            const dx = charCenterX - handCenterX;
+            const dy = charCenterY - handCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Нормализуем вектор
+            const force = CONFIG.physics.pushForce * (100 / Math.max(distance, 30));
+            gameState.characterVelocity.x = (dx / distance) * force;
+            gameState.characterVelocity.y = (dy / distance) * force;
+            
+            // Анимация персонажа
+            elements.character.style.transform = `translateX(-50%) scale(1.15)`;
+            setTimeout(() => {
+                elements.character.style.transform = `translateX(-50%) scale(1)`;
+            }, 200);
+        }
+        
+        function createVisualEffects(pointsChange) {
+            const charRect = elements.character.getBoundingClientRect();
+            const effectX = charRect.left + charRect.width / 2;
+            const effectY = charRect.top + charRect.height / 2;
+            
+            // Частицы
+            const particleType = pointsChange >= 0 ? 'positive' : 'negative';
+            createParticles(CONFIG.visuals.particleCount, particleType, effectX, effectY);
+            
+            // Вспышка
+            showFlash(pointsChange >= 0 ? 'success' : 'fail');
+            
+            // Тряска экрана для больших изменений
+            if (Math.abs(pointsChange) > 50) {
+                screenShake();
+            }
+            
+            // Подсказка
+            if (pointsChange >= 0) {
+                showHint(`+${pointsChange} очков!`);
+            } else {
+                showHint(`${pointsChange} очков...`);
+            }
+        }
+        
+        function checkSpecialEvents() {
+            // Юбилейные толчки
+            if (gameState.pushes % 10 === 0) {
+                showNotification('Юбилейный толчок!', `Вы сделали ${gameState.pushes} толчков!`, '🎉');
+            }
+            
+            // Особые правила при определенных условиях
+            if (gameState.score < -100 && Math.random() > 0.8) {
+                showNotification('Глубокий минус!', 'Вы близки к прозрению...', '👁️');
+            }
+        }
+        
+        function togglePause() {
+            if (!gameState.isPlaying) return;
+            
+            gameState.isPaused = !gameState.isPaused;
+            
+            if (gameState.isPaused) {
+                elements.pauseButton.innerHTML = '<span>▶️</span> Продолжить';
+                showNotification('Игра на паузе', 'Правила ждут...', '⏸️');
+            } else {
+                elements.pauseButton.innerHTML = '<span>⏸️</span> Пауза';
+                showNotification('Продолжаем!', 'Абсурд продолжается!', '🎮');
+            }
+        }
+        
+        function updateStats() {
+            // Время
+            elements.timeValue.textContent = gameState.time;
+            
+            // Очки
+            elements.scoreValue.textContent = gameState.score;
+            if (gameState.score >= 0) {
+                elements.scoreValue.className = 'stat-value positive';
+            } else {
+                elements.scoreValue.className = 'stat-value negative';
+            }
+            
+            // Толчки
+            elements.pushesValue.textContent = gameState.pushes;
+            
+            // Уровень абсурда
+            elements.absurdValue.textContent = gameState.absurdLevel;
+        }
+        
+        // ========== УВЕДОМЛЕНИЯ ==========
+        function showNotification(title, message, icon = 'ℹ️') {
+            elements.notificationIcon.textContent = icon;
+            elements.notificationTitle.textContent = title;
+            elements.notificationMessage.textContent = message;
+            
+            elements.notification.classList.add('show');
+            
+            setTimeout(() => {
+                elements.notification.classList.remove('show');
+            }, 4000);
+        }
+        
+        // ========== SHARING ==========
+        function shareGame() {
+            const url = window.location.href;
+            const score = gameState.score || gameState.highScore;
+            const message = `🎮 Couch Guardian Pro\n\n` +
+                          `Я набрал ${score} очков в этой абсурдной игре!\n` +
+                          `Попробуй разгадать странные правила и побить мой результат!\n\n` +
+                          `Играть тут: ${url}\n\n` +
+                          `#CouchGuardian #АбсурднаяИгра`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Couch Guardian',
+                    text: message,
+                    url: url
+                });
+            } else {
+                // Fallback для десктопа
+                const shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(shareUrl, '_blank', 'width=600,height=400');
+            }
+        }
+        
+        // ========== ЗАВЕРШЕНИЕ ==========
+        function cleanup() {
+            if (gameState.animationFrame) {
+                cancelAnimationFrame(gameState.animationFrame);
+            }
+            
+            if (gameState.gameTimer) {
+                clearInterval(gameState.gameTimer);
+            }
+            
+            if (gameState.physicsTimer) {
+                clearInterval(gameState.physicsTimer);
+            }
+        }
+        
+        // ========== ЗАПУСК ==========
+        window.addEventListener('DOMContentLoaded', initGame);
+        window.addEventListener('beforeunload', cleanup);
+        
+        // Предотвращаем масштабирование на мобильных
+        document.addEventListener('touchmove', function(e) {
+            if (e.scale !== 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Оптимизация для мобильных
+        if ('ontouchstart' in window) {
+            document.body.classList.add('touch-device');
+        }
     </script>
 </body>
 </html>
