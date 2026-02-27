@@ -1,13 +1,148 @@
-                clearTimeout(standUpTimer);
+                personPatience = Math.max(0, personPatience - 10);
+                updatePatienceBar();
+                
+                showNotification(`💤 Unnecessary push... -10 patience`);
             }
             
-            // Update displays
-            pushesEl.textContent = pushes;
-            timeEl.textContent = time + 's';
-            escapesEl.textContent = escapes;
-            updateDisplay();
+            // Check for special events
+            checkSpecialEvents();
+        }
+        
+        // Person stands up (game over)
+        function personStandsUp(reason) {
+            if (gameOver) return;
             
-            showNotification('🔄 Game reset! Starting over!');
+            gameOver = true;
+            isPlaying = false;
+            isTryingToStand = false;
+            
+            // Escape animation
+            personEl.classList.remove('standing');
+            personEl.classList.add('escaped');
+            personEl.textContent = '🏃‍♂️';
+            
+            // Show game over screen
+            showGameOver(reason);
+            
+            // Disable push button
+            pushBtnEl.disabled = true;
+            startBtnEl.disabled = false;
+            startBtnEl.textContent = '🔄 Play Again';
+            
+            console.log(`🏃‍♂️ GAME OVER: ${reason}`);
+        }
+        
+        // Calculate points
+        function calculatePoints() {
+            let points = 10; // Base points for successful push
+            
+            // Bonus for timing
+            if (personPatience < 20) {
+                points += 20; // Bonus for last-second save
+            }
+            
+            // Penalty for too many pushes
+            if (pushes > time * 0.5) { // More than 0.5 pushes per second
+                points = Math.floor(points / 2);
+            }
+            
+            return points;
+        }
+        
+        // Update patience bar
+        function updatePatienceBar() {
+            patienceBarEl.style.width = personPatience + '%';
+            
+            // Color coding
+            if (personPatience > 50) {
+                patienceBarEl.style.background = '#4ecdc4';
+            } else if (personPatience > 20) {
+                patienceBarEl.style.background = '#ffd93d';
+            } else {
+                patienceBarEl.style.background = '#ff6b6b';
+            }
+        }
+        
+        // Check for special events
+        function checkSpecialEvents() {
+            // 10th push celebration
+            if (pushes % 10 === 0 && pushes > 0) {
+                showNotification(`🎉 ${pushes} pushes!`);
+            }
+            
+            // Time milestones
+            if (time === 30) {
+                showNotification('⏰ 30 seconds! He\'s getting restless...');
+            } else if (time === 60) {
+                showNotification('⏰ 1 minute! Impressive!');
+            } else if (time === 120) {
+                showNotification('⏰ 2 minutes! You\'re a Couch Guardian master!');
+            }
+        }
+        
+        // Show game over screen
+        function showGameOver(reason) {
+            finalScoreEl.textContent = score;
+            finalTimeEl.textContent = time + 's';
+            finalPushesEl.textContent = pushes;
+            finalAttemptsEl.textContent = attempts;
+            
+            gameOverEl.style.display = 'flex';
+        }
+        
+        function hideGameOver() {
+            gameOverEl.style.display = 'none';
+        }
+        
+        // Setup hand dragging
+        function setupHandDragging() {
+            handEl.addEventListener('mousedown', startDrag);
+            handEl.addEventListener('touchstart', startDrag);
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag);
+            
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+            
+            // Initial hand position
+            handEl.style.left = '100px';
+            handEl.style.top = '150px';
+        }
+        
+        function startDrag(e) {
+            if (!isPlaying || gameOver) return;
+            
+            isDragging = true;
+            handEl.style.transform = 'scale(0.9)';
+            e.preventDefault();
+        }
+        
+        function drag(e) {
+            if (!isDragging || !isPlaying || gameOver) return;
+            
+            const rect = gameSceneEl.getBoundingClientRect();
+            let x, y;
+            
+            if (e.type.includes('touch')) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+            
+            // Keep hand within game scene
+            x = Math.max(25, Math.min(x, rect.width - 25));
+            y = Math.max(25, Math.min(y, rect.height - 25));
+            
+            handEl.style.left = x + 'px';
+            handEl.style.top = y + 'px';
+        }
+        
+        function stopDrag() {
+            isDragging = false;
+            handEl.style.transform = 'scale(1)';
         }
         
         // Show notification
