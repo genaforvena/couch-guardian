@@ -456,8 +456,14 @@
             console.log('GAME: Reset');
         }
         
-        // Start when page loads
-        window.addEventListener('DOMContentLoaded', init);
+        // Start when page loads - FIXED VERSION
+        if (document.readyState === 'loading') {
+            // DOM еще не загружен
+            window.addEventListener('DOMContentLoaded', init);
+        } else {
+            // DOM уже загружен
+            init();
+        }
     </script>
 </body>
 </html>
