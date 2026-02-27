@@ -1,363 +1,168 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian - Keep him sitting!</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: Arial, sans-serif;
-            background: #1a1a2e;
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            text-align: center;
-        }
-        .game-container {
-            max-width: 600px;
-            width: 100%;
-            background: rgba(255,255,255,0.1);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        h1 { color: #4ecdc4; margin-bottom: 10px; }
-        .score {
-            font-size: 4rem;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #4ecdc4;
-        }
-        .game-area {
-            position: relative;
-            height: 200px;
-            margin: 30px 0;
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .couch { font-size: 5rem; position: absolute; bottom: 10px; }
-        .person {
-            font-size: 4rem;
-            position: absolute;
-            bottom: 60px;
-            transition: all 0.3s;
-        }
-        .person.standing {
-            bottom: 120px;
-            transform: rotate(10deg);
-        }
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            border-radius: 10px;
-            cursor: pointer;
-            margin: 10px;
-            width: 100%;
-            max-width: 300px;
-        }
-        .btn:hover {
-            background: #764ba2;
-            transform: translateY(-3px);
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 10px;
-        }
-        .stat {
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.7;
-        }
-        .patience-bar {
-            height: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
-        .patience-fill {
-            height: 100%;
-            background: #4ecdc4;
-            width: 100%;
-            transition: width 0.3s;
-        }
-        .game-over {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 100;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .game-over-content {
-            background: #1a1a2e;
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-        }
-        .instructions {
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-        @media (max-width: 600px) {
-            .person { font-size: 3rem; }
-            .couch { font-size: 4rem; }
-            .score { font-size: 3rem; }
-        }
-    </style>
-</head>
-<body>
-    <div class="game-container">
-        <h1>🛋️ Couch Guardian</h1>
-        <p>Keep him on the couch! Push when needed.</p>
-        
-        <div class="score" id="score">0</div>
-        
-        <div class="patience-bar">
-            <div class="patience-fill" id="patienceBar" style="width: 100%"></div>
-        </div>
-        
-        <div class="game-area">
-            <div class="couch">🛋️</div>
-            <div class="person" id="person">🧍</div>
-        </div>
-        
-        <button class="btn" onclick="pushPerson()" id="pushBtn">
-            👊 Push (Space)
-        </button>
-        
-        <div class="instructions">
-            Press SPACE to push him back on couch!
-        </div>
-        
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-value" id="time">0s</div>
-                <div class="stat-label">Time</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value" id="pushes">0</div>
-                <div class="stat-label">Pushes</div>
-            </div>
-            <div class="stat">
-                <div class="stat-value" id="attempts">0</div>
-                <div class="stat-label">Attempts</div>
-            </div>
-        </div>
-        
-        <button class="btn" onclick="resetGame()" id="resetBtn" style="background: #ff6b6b;">
-            🔄 Reset Game (R)
-        </button>
-    </div>
-    
-    <div class="game-over" id="gameOver">
-        <div class="game-over-content">
-            <h1 style="color: #ff6b6b; font-size: 3rem;">🏃‍♂️ GAME OVER</h1>
-            <p style="font-size: 1.5rem; margin: 20px 0;">He stood up and left!</p>
-            <div class="score" style="font-size: 4rem;" id="finalScore">0</div>
-            <p style="margin: 20px 0;">Time: <span id="finalTime">0s</span></p>
-            <p style="margin: 20px 0;">Pushes: <span id="finalPushes">0</span></p>
-            <button class="btn" onclick="resetGame()" style="background: #4ecdc4; margin-top: 20px;">
-                🔄 Play Again
-            </button>
-        </div>
-    </div>
-    
-    <script>
-        // Game state
-        let score = 0;
-        let time = 0;
-        let pushes = 0;
-        let attempts = 0;
-        let isPlaying = true;
-        let gameOver = false;
-        let patience = 100;
-        let isTryingToStand = false;
-        let standTimer = null;
-        
-        // DOM elements
-        const scoreEl = document.getElementById('score');
-        const timeEl = document.getElementById('time');
-        const pushesEl = document.getElementById('pushes');
-        const attemptsEl = document.getElementById('attempts');
-        const personEl = document.getElementById('person');
-        const pushBtnEl = document.getElementById('pushBtn');
-        const resetBtnEl = document.getElementById('resetBtn');
-        const patienceBarEl = document.getElementById('patienceBar');
-        const gameOverEl = document.getElementById('gameOver');
-        const finalScoreEl = document.getElementById('finalScore');
-        const finalTimeEl = document.getElementById('finalTime');
-        const finalPushesEl = document.getElementById('finalPushes');
-        
-        // Initialize - START GAME IMMEDIATELY
-        function init() {
-            // Start game immediately
-            startGame();
-            
-            // Game timer
-            setInterval(() => {
-                if (isPlaying && !gameOver) {
-                    time++;
-                    timeEl.textContent = time + 's';
-                    
-                    // Decrease patience
-                    patience = Math.max(0, patience - 1);
-                    updatePatienceBar();
-                    
-                    // Try to stand up if patience low
-                    if (!isTryingToStand && patience < 30 && Math.random() < 0.2) {
-                        startStandAttempt();
-                    }
-                    
-                    // Game over if patience runs out
-                    if (patience <= 0 && !isTryingToStand) {
-                        endGame("Lost patience");
-                    }
-                }
-            }, 1000);
-            
-            // Keyboard controls
-            document.addEventListener('keydown', (e) => {
-                if (e.code === 'Space' && isPlaying && !gameOver) {
-                    pushPerson();
-                    e.preventDefault();
-                } else if (e.code === 'KeyR') {
-                    resetGame();
-                }
-            });
-            
-            console.log('🎮 Game started automatically!');
-        }
-        
-        // Start game (called automatically)
-        function startGame() {
-            // Reset state
-            score = 0;
-            time = 0;
-            pushes = 0;
-            attempts = 0;
-            isPlaying = true;
-            gameOver = false;
-            patience = 100;
-            isTryingToStand = false;
-            
-            // Reset person
-            personEl.className = 'person';
-            personEl.textContent = '🧍';
-            
-            // Update displays
-            scoreEl.textContent = score;
-            timeEl.textContent = time + 's';
-            pushesEl.textContent = pushes;
-            attemptsEl.textContent = attempts;
-            updatePatienceBar();
-            
-            // Hide game over
-            gameOverEl.style.display = 'none';
-            
-            console.log('🎮 Game started');
-        }
-        
-        // Person tries to stand
-        function startStandAttempt() {
-            if (isTryingToStand || gameOver) return;
-            
-            isTryingToStand = true;
-            attempts++;
-            attemptsEl.textContent = attempts;
-            
-            personEl.classList.add('standing');
-            personEl.textContent = '🚶';
-            
-            // Stand up in 3 seconds
-            standTimer = setTimeout(() => {
-                if (isTryingToStand && !gameOver) {
-                    endGame("He stood up!");
-                }
-            }, 3000);
-            
-            console.log('⚠️ He\'s trying to stand up!');
-        }
-        
-        // Push person back
-        function pushPerson() {
-            if (!isPlaying || gameOver) return;
-            
-            pushes++;
-            pushesEl.textContent = pushes;
-            
-            if (isTryingToStand) {
-                // Successful push back
-                personEl.classList.remove('standing');
-                personEl.textContent = '🧍';
-                clearTimeout(standTimer);
-                isTryingToStand = false;
-                
-                // Add points and patience
-                score += 20;
-                patience = Math.min(100, patience + 30);
-                
-                // Animation
-                personEl.style.transform = 'scale(1.2)';
-                setTimeout(() => {
-                    personEl.style.transform = 'scale(1)';
-                }, 200);
-                
-                console.log('👍 Pushed back! +20 points');
-            } else {
-                // Push while sitting (annoying)
-                score += 5;
-                patience = Math.max(0, patience - 10);
-                
-                // Animation
-                personEl.style.transform = 'scale(0.9)';
-                setTimeout(() => {
-                    personEl.style.transform = 'scale(1)';
-                }, 200);
-                
-                console.log('💤 Unnecessary push... -10 patience');
             }
             
-            // Update displays
+            // Rule 9: Cap extreme values but keep absurd
+            if (points > 100) points = Math.floor(points * 0.7);
+            if (points < -100) points = Math.floor(points * 0.7);
+            
+            // Rule 10: Sometimes just a random number
+            if (Math.random() < 0.05) {
+                points = Math.floor(Math.random() * 200) - 100;
+            }
+            
+            return points;
+        }
+        
+        // ABSURD PATIENCE BONUS CALCULATION
+        function calculateAbsurdPatienceBonus() {
+            let bonus = 20; // Base
+            
+            // Rule 1: Time-based bonus
+            if (time % 7 === 0) bonus += 10;
+            
+            // Rule 2: Score-based bonus
+            if (Math.abs(score) > 100) bonus += 5;
+            
+            // Rule 3: Push count bonus
+            if (pushes % 5 === 0) bonus += 15;
+            
+            // Rule 4: Random factor
+            bonus += Math.floor(Math.random() * 10) - 5;
+            
+            // Rule 5: Special conditions
+            if (patience < 30) bonus += 10; // Low patience boost
+            if (pushStreak > 2) bonus -= 5; // Streak penalty
+            
+            return Math.max(5, Math.min(50, bonus));
+        }
+        
+        // ABSURD PATIENCE PENALTY CALCULATION
+        function calculateAbsurdPatiencePenalty() {
+            let penalty = 10; // Base
+            
+            // Rule 1: Time-based penalty
+            if (time % 11 === 0) penalty += 8;
+            
+            // Rule 2: Score-based penalty
+            if (score < 0) penalty += 5;
+            
+            // Rule 3: Push count penalty
+            if (pushes % 3 === 0) penalty += 7;
+            
+            // Rule 4: Random factor
+            penalty += Math.floor(Math.random() * 8) - 4;
+            
+            // Rule 5: Special conditions
+            if (patience > 70) penalty += 3; // High patience extra penalty
+            if (pushStreak > 1) penalty += pushStreak * 2; // Streak penalty
+            
+            return Math.max(5, Math.min(30, penalty));
+        }
+        
+        // Helper functions for absurd rules
+        function isPrime(num) {
+            if (num <= 1) return false;
+            if (num <= 3) return true;
+            if (num % 2 === 0 || num % 3 === 0) return false;
+            for (let i = 5; i * i <= num; i += 6) {
+                if (num % i === 0 || num % (i + 2) === 0) return false;
+            }
+            return true;
+        }
+        
+        function isFibonacci(num) {
+            if (num === 0 || num === 1) return true;
+            let a = 0, b = 1, c = 1;
+            while (c < num) {
+                c = a + b;
+                a = b;
+                b = c;
+            }
+            return c === num;
+        }
+        
+        // Random messages for absurdity
+        function getRandomSuccessMessage() {
+            const messages = [
+                "Pushed back!", "Nice one!", "He sat down!", "Couch victory!",
+                "Sitting achieved!", "Not standing!", "Couch secured!", "Success!",
+                "He's sitting!", "Couch maintained!", "Position held!", "Good push!"
+            ];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+        
+        function getRandomAnnoyingMessage() {
+            const messages = [
+                "Why push?", "Unnecessary...", "He was sitting!", "Pointless push",
+                "Already sitting!", "No need for that!", "Why bother?", "Sitting fine",
+                "No standing here!", "Couch occupied!", "He's comfortable!", "No movement needed"
+            ];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+        
+        function formatPoints(points) {
+            if (points > 0) return `+${points}`;
+            if (points < 0) return `${points}`;
+            return "0";
+        }
+        
+        // Check for special time-based events
+        function checkTimeEvents() {
+            // Rule: Every 30 seconds, something special
+            if (time % 30 === 0 && time > 0) {
+                const events = [
+                    { name: "Time warp!", effect: () => { patience += 15; showNotification("⏰ Time warp! +15 patience"); } },
+                    { name: "Score shuffle!", effect: () => { score = Math.floor(score * (Math.random() > 0.5 ? 1.2 : 0.8)); updateScoreDisplay(); showNotification("🔀 Score shuffled!"); } },
+                    { name: "Patience reset!", effect: () => { patience = 50; updatePatienceBar(); showNotification("🔄 Patience reset to 50%"); } }
+                ];
+                const event = events[Math.floor(Math.random() * events.length)];
+                event.effect();
+            }
+            
+            // Rule: Every 13 seconds, something weird
+            if (time % 13 === 0 && time > 0) {
+                showNotification("👻 13 seconds... something feels weird");
+            }
+        }
+        
+        // Check for special push events
+        function checkPushEvents() {
+            // Rule: Every 7th push
+            if (pushes % 7 === 0 && pushes > 0) {
+                showNotification("🎱 7th push! Lucky number?");
+            }
+            
+            // Rule: Every 100 points milestone
+            if (Math.abs(score) % 100 < 10 && Math.abs(score) > 90) {
+                showNotification(`🎯 ${score > 0 ? 'Positive' : 'Negative'} ${Math.abs(score)} points!`);
+            }
+            
+            // Rule: Prime number of attempts
+            if (isPrime(attempts) && attempts > 1) {
+                showNotification(`🔢 Prime attempt ${attempts}!`);
+            }
+        }
+        
+        // Update score display with visual effects
+        function updateScoreDisplay() {
             scoreEl.textContent = score;
-            updatePatienceBar();
+            
+            // Color coding with transitions
+            if (score > 0) {
+                scoreEl.className = 'score positive';
+                scoreEl.style.textShadow = '0 0 10px rgba(78, 205, 196, 0.5)';
+            } else if (score < 0) {
+                scoreEl.className = 'score negative';
+                scoreEl.style.textShadow = '0 0 10px rgba(255, 107, 107, 0.5)';
+            } else {
+                scoreEl.className = 'score zero';
+                scoreEl.style.textShadow = 'none';
+            }
+            
+            // Animation for score change
+            scoreEl.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                scoreEl.style.transform = 'scale(1)';
+            }, 200);
         }
         
         // Update patience bar
@@ -390,12 +195,34 @@
             finalPushesEl.textContent = pushes;
             gameOverEl.style.display = 'flex';
             
+            // Final absurd message
+            const finalMessages = [
+                "He stood up! Game over!",
+                "Escaped! The couch is empty!",
+                "He's gone! You lost!",
+                "Standing achieved! You failed!",
+                "Couch abandoned! Game over!"
+            ];
+            showNotification(finalMessages[Math.floor(Math.random() * finalMessages.length)]);
+            
             console.log(`🏃‍♂️ GAME OVER: ${reason}`);
         }
         
         // Reset game
         function resetGame() {
             startGame();
+            showNotification("🔄 Game reset! Starting over!");
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            console.log(message);
+            notificationEl.textContent = message;
+            notificationEl.style.display = 'block';
+            
+            setTimeout(() => {
+                notificationEl.style.display = 'none';
+            }, 3000);
         }
         
         // Start when page loads - NO START BUTTON NEEDED!
