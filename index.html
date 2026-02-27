@@ -50,7 +50,6 @@
             position: absolute;
             bottom: 60px;
             transition: all 0.3s;
-            cursor: pointer;
         }
         .person.standing {
             bottom: 120px;
@@ -129,6 +128,14 @@
             max-width: 500px;
             width: 90%;
         }
+        .instructions {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
         @media (max-width: 600px) {
             .person { font-size: 3rem; }
             .couch { font-size: 4rem; }
@@ -139,7 +146,7 @@
 <body>
     <div class="game-container">
         <h1>🛋️ Couch Guardian</h1>
-        <p>Keep the person on the couch! Push when needed.</p>
+        <p>Keep him on the couch! Push when needed.</p>
         
         <div class="score" id="score">0</div>
         
@@ -156,6 +163,10 @@
             👊 Push (Space)
         </button>
         
+        <div class="instructions">
+            Press SPACE to push him back on couch!
+        </div>
+        
         <div class="stats">
             <div class="stat">
                 <div class="stat-value" id="time">0s</div>
@@ -171,8 +182,8 @@
             </div>
         </div>
         
-        <button class="btn" onclick="startGame()" id="startBtn" style="background: #4ecdc4;">
-            🎮 Start Game
+        <button class="btn" onclick="resetGame()" id="resetBtn" style="background: #ff6b6b;">
+            🔄 Reset Game (R)
         </button>
     </div>
     
@@ -183,7 +194,7 @@
             <div class="score" style="font-size: 4rem;" id="finalScore">0</div>
             <p style="margin: 20px 0;">Time: <span id="finalTime">0s</span></p>
             <p style="margin: 20px 0;">Pushes: <span id="finalPushes">0</span></p>
-            <button class="btn" onclick="startGame()" style="background: #4ecdc4; margin-top: 20px;">
+            <button class="btn" onclick="resetGame()" style="background: #4ecdc4; margin-top: 20px;">
                 🔄 Play Again
             </button>
         </div>
@@ -195,7 +206,7 @@
         let time = 0;
         let pushes = 0;
         let attempts = 0;
-        let isPlaying = false;
+        let isPlaying = true;
         let gameOver = false;
         let patience = 100;
         let isTryingToStand = false;
@@ -208,15 +219,18 @@
         const attemptsEl = document.getElementById('attempts');
         const personEl = document.getElementById('person');
         const pushBtnEl = document.getElementById('pushBtn');
-        const startBtnEl = document.getElementById('startBtn');
+        const resetBtnEl = document.getElementById('resetBtn');
         const patienceBarEl = document.getElementById('patienceBar');
         const gameOverEl = document.getElementById('gameOver');
         const finalScoreEl = document.getElementById('finalScore');
         const finalTimeEl = document.getElementById('finalTime');
         const finalPushesEl = document.getElementById('finalPushes');
         
-        // Initialize
+        // Initialize - START GAME IMMEDIATELY
         function init() {
+            // Start game immediately
+            startGame();
+            
             // Game timer
             setInterval(() => {
                 if (isPlaying && !gameOver) {
@@ -244,15 +258,15 @@
                 if (e.code === 'Space' && isPlaying && !gameOver) {
                     pushPerson();
                     e.preventDefault();
-                } else if (e.code === 'KeyR' && !isPlaying) {
-                    startGame();
+                } else if (e.code === 'KeyR') {
+                    resetGame();
                 }
             });
             
-            console.log('🎮 Game initialized');
+            console.log('🎮 Game started automatically!');
         }
         
-        // Start game
+        // Start game (called automatically)
         function startGame() {
             // Reset state
             score = 0;
@@ -274,11 +288,6 @@
             pushesEl.textContent = pushes;
             attemptsEl.textContent = attempts;
             updatePatienceBar();
-            
-            // Enable/disable buttons
-            pushBtnEl.disabled = false;
-            startBtnEl.disabled = true;
-            startBtnEl.textContent = '🎮 Game Running...';
             
             // Hide game over
             gameOverEl.style.display = 'none';
@@ -381,15 +390,15 @@
             finalPushesEl.textContent = pushes;
             gameOverEl.style.display = 'flex';
             
-            // Disable push button
-            pushBtnEl.disabled = true;
-            startBtnEl.disabled = false;
-            startBtnEl.textContent = '🔄 Play Again';
-            
             console.log(`🏃‍♂️ GAME OVER: ${reason}`);
         }
         
-        // Start when page loads
+        // Reset game
+        function resetGame() {
+            startGame();
+        }
+        
+        // Start when page loads - NO START BUTTON NEEDED!
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
