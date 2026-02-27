@@ -1,135 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couch Guardian - Keep him sitting!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        .game-container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { color: #4ecdc4; margin-bottom: 10px; }
+        .score {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4ecdc4;
+        }
+        .score.negative { color: #ff6b6b; }
+        .game-area {
+            position: relative;
+            height: 200px;
+            margin: 30px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .couch { 
+            font-size: 5rem; 
+            position: absolute; 
+            bottom: 10px; 
+            z-index: 1;
+        }
+        .person {
+            font-size: 4rem;
+            position: absolute;
+            bottom: 60px;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+        .person.standing {
+            bottom: 120px;
+            transform: rotate(10deg);
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-3px);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        .patience-bar {
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .patience-fill {
+            height: 100%;
+            background: #4ecdc4;
+            width: 100%;
+            transition: width 0.3s;
+        }
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .game-over-content {
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        @media (max-width: 600px) {
+            .person { font-size: 3rem; }
+            .couch { font-size: 4rem; }
+            .score { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🛋️ Couch Guardian</h1>
+        <p>Keep the person on the couch! Push when needed.</p>
+        
+        <div class="score" id="score">0</div>
+        
+        <div class="patience-bar">
+            <div class="patience-fill" id="patienceBar" style="width: 100%"></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="couch">🛋️</div>
+            <div class="person" id="person">🧍</div>
+        </div>
+        
+        <button class="btn" onclick="pushPerson()" id="pushBtn">
+            👊 Push (Space)
+        </button>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="time">0s</div>
+                <div class="stat-label">Time</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="pushes">0</div>
+                <div class="stat-label">Pushes</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="attempts">0</div>
+                <div class="stat-label">Attempts</div>
+            </div>
+        </div>
+        
+        <button class="btn" onclick="resetGame()" id="resetBtn" style="background: #ff6b6b;">
+            🔄 Reset Game (R)
+        </button>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h1 style="color: #ff6b6b; font-size: 3rem;">🏃‍♂️ GAME OVER</h1>
+            <p style="font-size: 1.5rem; margin: 20px 0;">He stood up and left!</p>
+            <div class="score" style="font-size: 4rem;" id="finalScore">0</div>
+            <p style="margin: 20px 0;">Time: <span id="finalTime">0s</span></p>
+            <p style="margin: 20px 0;">Pushes: <span id="finalPushes">0</span></p>
+            <button class="btn" onclick="resetGame()" style="background: #4ecdc4; margin-top: 20px;">
+                🔄 Play Again
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let score = 0;
+        let time = 0;
+        let pushes = 0;
+        let attempts = 0;
+        let isPlaying = true;
+        let gameOver = false;
+        let patience = 100;
+        let isTryingToStand = false;
+        let standTimer = null;
+        
+        // DOM elements
+        const scoreEl = document.getElementById('score');
+        const timeEl = document.getElementById('time');
+        const pushesEl = document.getElementById('pushes');
+        const attemptsEl = document.getElementById('attempts');
+        const personEl = document.getElementById('person');
+        const pushBtnEl = document.getElementById('pushBtn');
+        const resetBtnEl = document.getElementById('resetBtn');
+        const patienceBarEl = document.getElementById('patienceBar');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+        const finalTimeEl = document.getElementById('finalTime');
+        const finalPushesEl = document.getElementById('finalPushes');
+        
+        // Initialize - START GAME IMMEDIATELY
+        function init() {
+            // Start game immediately
+            startGame();
+            
+            // Game timer
+            setInterval(() => {
+                if (isPlaying && !gameOver) {
+                    time++;
+                    timeEl.textContent = time + 's';
+                    
+                    // Decrease patience
+                    patience = Math.max(0, patience - 1);
+                    updatePatienceBar();
+                    
+                    // Try to stand up if patience low
+                    if (!isTryingToStand && patience < 30 && Math.random() < 0.2) {
+                        startStandAttempt();
+                    }
+                    
+                    // Game over if patience runs out
+                    if (patience <= 0 && !isTryingToStand) {
+                        endGame("Lost patience");
+                    }
+                }
+            }, 1000);
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && isPlaying && !gameOver) {
+                    pushPerson();
+                    e.preventDefault();
+                } else if (e.code === 'KeyR') {
+                    resetGame();
+                }
+            });
+            
+            console.log('🎮 Game started automatically!');
+        }
+        
+        // Start game (called automatically)
+        function startGame() {
+            // Reset state
+            score = 0;
+            time = 0;
+            pushes = 0;
+            attempts = 0;
+            isPlaying = true;
+            gameOver = false;
+            patience = 100;
+            isTryingToStand = false;
+            
+            // Reset person
+            personEl.className = 'person';
+            personEl.textContent = '🧍';
+            
+            // Update displays
+            scoreEl.textContent = score;
+            timeEl.textContent = time + 's';
+            pushesEl.textContent = pushes;
+            attemptsEl.textContent = attempts;
+            updatePatienceBar();
+            
+            // Hide game over
+            gameOverEl.style.display = 'none';
+            
+            console.log('🎮 Game started');
+        }
+        
+        // Person tries to stand
+        function startStandAttempt() {
+            if (isTryingToStand || gameOver) return;
+            
+            isTryingToStand = true;
+            attempts++;
+            attemptsEl.textContent = attempts;
+            
+            personEl.classList.add('standing');
+            personEl.textContent = '🚶';
+            
+            // Stand up in 3 seconds
+            standTimer = setTimeout(() => {
+                if (isTryingToStand && !gameOver) {
+                    endGame("He stood up!");
+                }
+            }, 3000);
+            
+            console.log('⚠️ He\'s trying to stand up!');
+        }
+        
+        // Push person back
+        function pushPerson() {
+            if (!isPlaying || gameOver) return;
+            
+            pushes++;
+            pushesEl.textContent = pushes;
+            
+            if (isTryingToStand) {
+                // Successful push back
+                personEl.classList.remove('standing');
+                personEl.textContent = '🧍';
+                clearTimeout(standTimer);
+                isTryingToStand = false;
+                
+                // Add points and patience
+                score += calculatePoints(true);
+                patience = Math.min(100, patience + 30);
+                
+                // Animation
+                personEl.style.transform = 'scale(1.2)';
                 setTimeout(() => {
-                    personContainerEl.classList.remove('push-effect');
-                }, 300);
+                    personEl.style.transform = 'scale(1)';
+                }, 200);
                 
-                // Calculate points
-                points = calculateAbsurdPoints(false);
-                score += points;
+                console.log('👍 Pushed back!');
+            } else {
+                // Push while sitting (annoying)
+                score += calculatePoints(false);
+                patience = Math.max(0, patience - 10);
                 
-                // Calculate patience change
-                patienceChange = calculatePatienceChange(false);
-                patience = Math.max(0, patience + patienceChange);
+                // Animation
+                personEl.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    personEl.style.transform = 'scale(1)';
+                }, 200);
                 
-                message = `💤 Unnecessary push... ${formatPoints(points)}`;
+                console.log('💤 Unnecessary push...');
             }
             
             // Update displays
-            updateScoreDisplay();
+            scoreEl.textContent = score;
             updatePatienceBar();
-            
-            // Show notification
-            if (patienceChange !== 0) {
-                message += ` | Patience: ${formatPoints(patienceChange)}%`;
-            }
-            showNotification(message);
-            
-            // Check for special events
-            checkPushEvents();
         }
         
-        // Calculate absurd points
-        function calculateAbsurdPoints(isSuccessful) {
+        // Calculate points (absurd system)
+        function calculatePoints(isSuccessful) {
             if (isSuccessful) {
                 const possible = [7, 13, 42, -8, 19, -3, 27, 5, -11, 33, 0, 21, -17, 9];
-                let points = possible[Math.floor(Math.random() * possible.length)];
-                
-                // Special conditions
-                if (patience < 20) points += 15; // Last-second bonus
-                if (pushes % 7 === 0) points += 7; // 7th push bonus
-                if (time % 13 === 0) points = -Math.abs(points); // 13 second curse
-                
-                return points;
+                return possible[Math.floor(Math.random() * possible.length)];
             } else {
                 const possible = [-2, 1, 0, -1, 3, -4, 2, 0, -3, 1];
-                let points = possible[Math.floor(Math.random() * possible.length)];
-                
-                // Special conditions
-                if (pushStreak > 2) points -= pushStreak * 2; // Streak penalty
-                if (patience > 70) points -= 5; // High patience annoyance
-                
-                return points;
+                return possible[Math.floor(Math.random() * possible.length)];
             }
-        }
-        
-        // Calculate patience change
-        function calculatePatienceChange(isSuccessful) {
-            if (isSuccessful) {
-                let change = 20 + Math.random() * 15; // 20-35
-                if (patience < 30) change += 10; // Low patience big boost
-                if (pushes % 5 === 0) change -= 5; // Every 5th push less boost
-                return Math.round(change);
-            } else {
-                let change = -(8 + Math.random() * 12); // -8 to -20
-                if (patience > 70) change -= 10; // High patience big penalty
-                if (pushStreak > 1) change -= pushStreak * 3; // Streak penalty
-                return Math.round(change);
-            }
-        }
-        
-        // Format points
-        function formatPoints(points) {
-            if (points > 0) return `+${points}`;
-            if (points < 0) return `${points}`;
-            return "0";
-        }
-        
-        // Update score display with effects
-        function updateScoreDisplay() {
-            scoreEl.textContent = score;
-            
-            // Remove all classes first
-            scoreEl.className = 'score';
-            
-            // Add appropriate class
-            if (score > 0) {
-                scoreEl.classList.add('positive');
-            } else if (score < 0) {
-                scoreEl.classList.add('negative');
-            } else {
-                scoreEl.classList.add('zero');
-            }
-            
-            // Animation
-            scoreEl.style.transform = 'scale(1.15)';
-            setTimeout(() => {
-                scoreEl.style.transform = 'scale(1)';
-            }, 300);
         }
         
         // Update patience bar
         function updatePatienceBar() {
             patienceBarEl.style.width = patience + '%';
-            patienceTextEl.textContent = Math.round(patience) + '%';
             
-            // Update color based on patience
-            if (patience > 70) {
-                patienceBarEl.style.background = 'linear-gradient(90deg, #4ecdc4, #667eea)';
-            } else if (patience > 40) {
-                patienceBarEl.style.background = 'linear-gradient(90deg, #ffd93d, #ff9a3d)';
+            // Color coding
+            if (patience > 50) {
+                patienceBarEl.style.background = '#4ecdc4';
             } else if (patience > 20) {
-                patienceBarEl.style.background = 'linear-gradient(90deg, #ff9a3d, #ff6b6b)';
+                patienceBarEl.style.background = '#ffd93d';
             } else {
-                patienceBarEl.style.background = 'linear-gradient(90deg, #ff6b6b, #ff5252)';
+                patienceBarEl.style.background = '#ff6b6b';
             }
-        }
-        
-        // Check time events
-        function checkTimeEvents() {
-            if (time % 30 === 0 && time > 0) {
-                showNotification('⏰ 30 seconds passed! Time is flying...');
-            }
-            if (time % 13 === 0 && time > 0) {
-                showNotification('👻 13 seconds... spooky!');
-            }
-        }
-        
-        // Check push events
-        function checkPushEvents() {
-            if (pushes % 7 === 0 && pushes > 0) {
-                showNotification('🎱 7th push! Lucky number?');
-            }
-            if (pushes % 13 === 0 && pushes > 0) {
-                showNotification('😈 13th push! Unlucky?');
+            
+            // Update score color
+            if (score > 0) {
+                scoreEl.className = 'score';
+            } else if (score < 0) {
+                scoreEl.className = 'score negative';
+            } else {
+                scoreEl.className = 'score';
             }
         }
         
@@ -139,64 +391,22 @@
             isPlaying = false;
             isTryingToStand = false;
             
-            // Escape animation
-            personContainerEl.classList.remove('trying');
-            personContainerEl.classList.add('standing');
-            setTimeout(() => {
-                personContainerEl.style.opacity = '0.5';
-                personContainerEl.style.transform = 'translateX(-50%) translateX(100px)';
-            }, 500);
+            // Show escaped person
+            personEl.className = 'person';
+            personEl.textContent = '🏃‍♂️';
             
-            // Show game over screen after delay
-            setTimeout(() => {
-                showGameOver(reason);
-            }, 1000);
-            
-            console.log(`🏃‍♂️ GAME OVER: ${reason}`);
-        }
-        
-        // Show game over
-        function showGameOver(reason) {
+            // Show game over screen
             finalScoreEl.textContent = score;
             finalTimeEl.textContent = time + 's';
             finalPushesEl.textContent = pushes;
-            finalAttemptsEl.textContent = attempts;
-            finalPatienceEl.textContent = Math.round(patience) + '%';
-            
-            // Update final score display
-            finalScoreEl.className = 'score';
-            if (score > 0) finalScoreEl.classList.add('positive');
-            else if (score < 0) finalScoreEl.classList.add('negative');
-            else finalScoreEl.classList.add('zero');
-            
             gameOverEl.style.display = 'flex';
-            pushBtnEl.disabled = true;
-        }
-        
-        // Hide game over
-        function hideGameOver() {
-            gameOverEl.style.display = 'none';
+            
+            console.log(`🏃‍♂️ GAME OVER: ${reason}`);
         }
         
         // Reset game
         function resetGame() {
             startGame();
-            showNotification('🔄 Game reset! Starting over!');
-        }
-        
-        // Show notification
-        function showNotification(message) {
-            console.log(message);
-            notificationEl.textContent = message;
-            notificationEl.style.display = 'block';
-            
-            // Random border color
-            const colors = ['#4ecdc4', '#667eea', '#ff6b6b', '#ffd93d', '#9b59b6'];
-            notificationEl.style.borderLeftColor = colors[Math.floor(Math.random() * colors.length)];
-            
-            setTimeout(() => {
-                notificationEl.style.display = 'none';
-            }, 3000);
         }
         
         // Start when page loads
