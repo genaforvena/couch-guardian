@@ -1,4 +1,388 @@
-                // Animation
+﻿<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Couch Guardian - Keep him sitting!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        .game-container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { color: #4ecdc4; margin-bottom: 10px; }
+        .score {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4ecdc4;
+        }
+        .score.negative { color: #ff6b6b; }
+        .game-area {
+            position: relative;
+            height: 200px;
+            margin: 30px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .couch { 
+            font-size: 5rem; 
+            position: absolute; 
+            bottom: 10px; 
+            z-index: 1;
+        }
+        .person {
+            font-size: 4rem;
+            position: absolute;
+            bottom: 60px;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+        .person.standing {
+            bottom: 120px;
+            transform: rotate(10deg);
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .btn:hover {
+            background: #764ba2;
+            transform: translateY(-3px);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        .patience-bar {
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .patience-fill {
+            height: 100%;
+            background: #4ecdc4;
+            width: 100%;
+            transition: width 0.3s;
+        }
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .game-over-content {
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        @media (max-width: 600px) {
+            .person { font-size: 3rem; }
+            .couch { font-size: 4rem; }
+            .score { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class='game-container'>
+        <h1>🛋️ Couch Guardian</h1>
+        <p>Keep the person on the couch! Push when needed.</p>
+        
+        <div class='score' id='score'>0</div>
+        
+        <div class='patience-bar'>
+            <div class='patience-fill' id='patienceBar' style='width: 100%'></div>
+        </div>
+        
+        <div class='game-area'>
+            <div class='couch'>🛋️</div>
+            <div class='person' id='person'>🧍</div>
+        </div>
+        
+        <button class='btn' onclick='pushPerson()' id='pushBtn'>
+            👊 Push (Space)
+        </button>
+        
+        <div class='stats'>
+            <div class='stat'>
+                <div class='stat-value' id='time'>0s</div>
+                <div class='stat-label'>Time</div>
+            </div>
+            <div class='stat'>
+                <div class='stat-value' id='pushes'>0</div>
+                <div class='stat-label'>Pushes</div>
+            </div>
+            <div class='stat'>
+                <div class='stat-value' id='attempts'>0</div>
+                <div class='stat-label'>Attempts</div>
+            </div>
+        </div>
+        
+        <button class='btn' onclick='resetGame()' id='resetBtn' style='background: #ff6b6b;'>
+            🔄 Reset Game (R)
+        </button>
+    </div>
+    
+    <div class='game-over' id='gameOver'>
+        <div class='game-over-content'>
+            <h1 style='color: #ff6b6b; font-size: 3rem;'>🏃‍♂️ GAME OVER</h1>
+            <p style='font-size: 1.5rem; margin: 20px 0;'>He stood up and left!</p>
+            <div class='score' style='font-size: 4rem;' id='finalScore'>0</div>
+            <p style='margin: 20px 0;'>Time: <span id='finalTime'>0s</span></p>
+            <p style='margin: 20px 0;'>Pushes: <span id='finalPushes'>0</span></p>
+            <button class='btn' onclick='resetGame()' style='background: #4ecdc4; margin-top: 20px;'>
+                🔄 Play Again
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let score = 0;
+        let time = 0;
+        let pushes = 0;
+        let attempts = 0;
+        let isPlaying = true;
+        let gameOver = false;
+        let patience = 100;
+        let isTryingToStand = false;
+        let standTimer = null;
+        let lastAttemptTime = 0;
+        
+        // Smart attempt system
+        let attemptPhase = 'early'; // early, mid, late
+        let timeSinceLastAttempt = 0;
+        let consecutiveCalm = 0;
+        
+        // DOM elements
+        const scoreEl = document.getElementById('score');
+        const timeEl = document.getElementById('time');
+        const pushesEl = document.getElementById('pushes');
+        const attemptsEl = document.getElementById('attempts');
+        const personEl = document.getElementById('person');
+        const pushBtnEl = document.getElementById('pushBtn');
+        const resetBtnEl = document.getElementById('resetBtn');
+        const patienceBarEl = document.getElementById('patienceBar');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+        const finalTimeEl = document.getElementById('finalTime');
+        const finalPushesEl = document.getElementById('finalPushes');
+        
+        // Initialize - START GAME IMMEDIATELY
+        function init() {
+            // Start game immediately
+            startGame();
+            
+            // Game timer
+            setInterval(() => {
+                if (isPlaying && !gameOver) {
+                    time++;
+                    timeEl.textContent = time + 's';
+                    timeSinceLastAttempt++;
+                    
+                    // Update phase
+                    if (time < 30) attemptPhase = 'early';
+                    else if (time < 90) attemptPhase = 'mid';
+                    else attemptPhase = 'late';
+                    
+                    // Decrease patience
+                    patience = Math.max(0, patience - 1);
+                    updatePatienceBar();
+                    
+                    // Try to stand up - SMART SYSTEM
+                    if (!isTryingToStand) {
+                        let chance = getAttemptChance();
+                        
+                        if (Math.random() < chance) {
+                            startStandAttempt();
+                        } else if (timeSinceLastAttempt > 10) {
+                            consecutiveCalm++;
+                        }
+                    }
+                    
+                    // Game over if patience runs out
+                    if (patience <= 0 && !isTryingToStand) {
+                        endGame('Ran out of patience');
+                    }
+                }
+            }, 1000);
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && isPlaying && !gameOver) {
+                    pushPerson();
+                    e.preventDefault();
+                } else if (e.code === 'KeyR') {
+                    resetGame();
+                }
+            });
+            
+            console.log('🎮 Smart Couch Guardian started!');
+        }
+        
+        // Calculate attempt chance
+        function getAttemptChance() {
+            let chance = 0.15; // Base 15%
+            
+            // Phase modifiers
+            if (attemptPhase === 'early') chance *= 1.5; // Early: frequent
+            else if (attemptPhase === 'late') chance *= 0.8; // Late: unpredictable
+            
+            // Time since last attempt
+            if (timeSinceLastAttempt > 20) chance *= 2.0; // Long wait → higher chance
+            if (timeSinceLastAttempt < 5) chance *= 0.3;  // Just tried → lower chance
+            
+            // Patience level
+            if (patience < 30) chance *= 2.0;
+            else if (patience < 50) chance *= 1.5;
+            
+            // Long calm periods (late game)
+            if (attemptPhase === 'late' && consecutiveCalm > 3 && Math.random() < 0.3) {
+                chance *= 0.1; // Very low chance - long calm
+            }
+            
+            // Random bursts
+            if (Math.random() < 0.05) chance *= 3.0;
+            
+            return Math.min(0.8, Math.max(0.05, chance));
+        }
+        
+        // Start game
+        function startGame() {
+            score = 0;
+            time = 0;
+            pushes = 0;
+            attempts = 0;
+            isPlaying = true;
+            gameOver = false;
+            patience = 100;
+            isTryingToStand = false;
+            lastAttemptTime = 0;
+            timeSinceLastAttempt = 0;
+            consecutiveCalm = 0;
+            attemptPhase = 'early';
+            
+            personEl.className = 'person';
+            personEl.textContent = '🧍';
+            
+            scoreEl.textContent = score;
+            timeEl.textContent = time + 's';
+            pushesEl.textContent = pushes;
+            attemptsEl.textContent = attempts;
+            updatePatienceBar();
+            
+            gameOverEl.style.display = 'none';
+            
+            console.log('🎮 Game started - early phase (frequent attempts)');
+        }
+        
+        // Person tries to stand
+        function startStandAttempt() {
+            if (isTryingToStand || gameOver) return;
+            
+            isTryingToStand = true;
+            attempts++;
+            attemptsEl.textContent = attempts;
+            
+            timeSinceLastAttempt = 0;
+            consecutiveCalm = 0;
+            
+            personEl.classList.add('standing');
+            personEl.textContent = '🚶';
+            
+            const standTime = 2000 + Math.random() * 2000;
+            
+            standTimer = setTimeout(() => {
+                if (isTryingToStand && !gameOver) {
+                    endGame('He stood up!');
+                }
+            }, standTime);
+            
+            console.log(\⚠️ Attempt #\ (\ phase)\);
+        }
+        
+        // Push person back
+        function pushPerson() {
+            if (!isPlaying || gameOver) return;
+            
+            pushes++;
+            pushesEl.textContent = pushes;
+            
+            if (isTryingToStand) {
+                personEl.classList.remove('standing');
+                personEl.textContent = '🧍';
+                clearTimeout(standTimer);
+                isTryingToStand = false;
+                
+                score += calculatePoints(true);
+                patience = Math.min(100, patience + 30);
+                
+                personEl.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    personEl.style.transform = 'scale(1)';
+                }, 200);
+                
+                console.log(\👍 Pushed back! (Phase: \)\);
+                
+            } else {
+                score += calculatePoints(false);
+                patience = Math.max(0, patience - 10);
+                
                 personEl.style.transform = 'scale(0.9)';
                 setTimeout(() => {
                     personEl.style.transform = 'scale(1)';
@@ -7,35 +391,38 @@
                 console.log('💤 Unnecessary push...');
             }
             
-            // Update displays
-            updateScoreDisplay();
+            scoreEl.textContent = score;
             updatePatienceBar();
-            updateAttemptInfo();
         }
         
-        // Calculate points (absurd system)
+        // Calculate points
         function calculatePoints(isSuccessful) {
             if (isSuccessful) {
                 const possible = [7, 13, 42, -8, 19, -3, 27, 5, -11, 33, 0, 21, -17, 9];
                 let points = possible[Math.floor(Math.random() * possible.length)];
-                
-                // Special conditions
                 if (patience < 20) points += 15;
                 if (pushes % 7 === 0) points += 7;
                 if (time % 13 === 0) points = -Math.abs(points);
-                
                 return points;
             } else {
                 const possible = [-2, 1, 0, -1, 3, -4, 2, 0, -3, 1];
-                let points = possible[Math.floor(Math.random() * possible.length)];
-                
-                return points;
+                return possible[Math.floor(Math.random() * possible.length)];
             }
         }
         
-        // Update score display
-        function updateScoreDisplay() {
-            scoreEl.textContent = score;
+        // Update patience bar
+        function updatePatienceBar() {
+            patienceBarEl.style.width = patience + '%';
+            
+            if (patience > 70) {
+                patienceBarEl.style.background = '#4ecdc4';
+            } else if (patience > 40) {
+                patienceBarEl.style.background = '#ffd93d';
+            } else if (patience > 20) {
+                patienceBarEl.style.background = '#ff9a3d';
+            } else {
+                patienceBarEl.style.background = '#ff6b6b';
+            }
             
             if (score > 0) {
                 scoreEl.className = 'score';
@@ -46,86 +433,21 @@
             }
         }
         
-        // Update patience bar
-        function updatePatienceBar() {
-            patienceBarEl.style.width = patience + '%';
-            
-            // Color coding
-            if (patience > 70) {
-                patienceBarEl.style.background = '#4ecdc4';
-            } else if (patience > 40) {
-                patienceBarEl.style.background = '#ffd93d';
-            } else if (patience > 20) {
-                patienceBarEl.style.background = '#ff9a3d';
-            } else {
-                patienceBarEl.style.background = '#ff6b6b';
-            }
-        }
-        
-        // Update attempt info
-        function updateAttemptInfo() {
-            const chance = attemptSettings.getAttemptChance();
-            const description = attemptSettings.getChanceDescription(chance);
-            attemptChanceEl.textContent = description;
-            
-            // Color code based on chance
-            if (chance > 0.5) {
-                attemptChanceEl.style.color = '#ff6b6b';
-            } else if (chance > 0.3) {
-                attemptChanceEl.style.color = '#ff9a3d';
-            } else if (chance > 0.15) {
-                attemptChanceEl.style.color = '#ffd93d';
-            } else {
-                attemptChanceEl.style.color = '#4ecdc4';
-            }
-            
-            // Show cooldown if active
-            if (attemptCooldown > 0) {
-                attemptInfoEl.innerHTML = `Cooldown: <span id="attemptChance">${attemptCooldown}s</span>`;
-            } else {
-                attemptInfoEl.innerHTML = `Next attempt: <span id="attemptChance">${description}</span>`;
-            }
-        }
-        
-        // Check time events
-        function checkTimeEvents() {
-            // Phase transitions
-            if (time === 30) {
-                console.log('🔄 Entering mid-game phase');
-                attemptInfoEl.innerHTML = 'Phase: <span id="attemptChance" style="color:#ffd93d">Mid-Game</span> (balanced attempts)';
-            }
-            if (time === 90) {
-                console.log('🔄 Entering late-game phase');
-                attemptInfoEl.innerHTML = 'Phase: <span id="attemptChance" style="color:#ff6b6b">Late-Game</span> (unpredictable!)';
-            }
-            
-            // Special events
-            if (time % 30 === 0 && time > 0) {
-                console.log('⏰ 30 seconds milestone');
-            }
-            if (time % 13 === 0 && time > 0) {
-                console.log('👻 13 seconds...');
-            }
-        }
-        
         // End game
         function endGame(reason) {
             gameOver = true;
             isPlaying = false;
             isTryingToStand = false;
             
-            // Show escaped person
             personEl.className = 'person';
             personEl.textContent = '🏃‍♂️';
             
-            // Show game over screen
             finalScoreEl.textContent = score;
             finalTimeEl.textContent = time + 's';
             finalPushesEl.textContent = pushes;
-            finalAttemptsEl.textContent = attempts;
             gameOverEl.style.display = 'flex';
             
-            console.log(`🏃‍♂️ GAME OVER: ${reason} (Phase: ${attemptSettings.gamePhase})`);
+            console.log(\🏃‍♂️ GAME OVER: \ (Phase: \)\);
         }
         
         // Reset game
