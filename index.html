@@ -1,9 +1,197 @@
+                // Calculate patience change
+                patienceChange = calculatePatienceChange(false);
+                patience = Math.max(0, patience + patienceChange);
+                
+                message = `💤 Unnecessary push... ${formatPoints(points)}`;
+            }
+            
+            // Update displays
+            updateScoreDisplay();
+            updatePatienceBar();
+            
+            // Show notification
+            if (patienceChange !== 0) {
+                message += ` | Patience: ${formatPoints(patienceChange)}%`;
+            }
+            showNotification(message);
+            
+            // Check for special events
+            checkPushEvents();
+        }
+        
+        // Calculate absurd points
+        function calculateAbsurdPoints(isSuccessful) {
+            if (isSuccessful) {
+                const possible = [7, 13, 42, -8, 19, -3, 27, 5, -11, 33, 0, 21, -17, 9];
+                let points = possible[Math.floor(Math.random() * possible.length)];
+                
+                // Special conditions
+                if (patience < 20) points += 15; // Last-second bonus
+                if (pushes % 7 === 0) points += 7; // 7th push bonus
+                if (time % 13 === 0) points = -Math.abs(points); // 13 second curse
+                
+                return points;
+            } else {
+                const possible = [-2, 1, 0, -1, 3, -4, 2, 0, -3, 1];
+                let points = possible[Math.floor(Math.random() * possible.length)];
+                
+                // Special conditions
+                if (pushStreak > 2) points -= pushStreak * 2; // Streak penalty
+                if (patience > 70) points -= 5; // High patience annoyance
+                
+                return points;
+            }
+        }
+        
+        // Calculate patience change
+        function calculatePatienceChange(isSuccessful) {
+            if (isSuccessful) {
+                let change = 20 + Math.random() * 15; // 20-35
+                if (patience < 30) change += 10; // Low patience big boost
+                if (pushes % 5 === 0) change -= 5; // Every 5th push less boost
+                return Math.round(change);
+            } else {
+                let change = -(8 + Math.random() * 12); // -8 to -20
+                if (patience > 70) change -= 10; // High patience big penalty
+                if (pushStreak > 1) change -= pushStreak * 3; // Streak penalty
+                return Math.round(change);
+            }
+        }
+        
+        // Format points
+        function formatPoints(points) {
+            if (points > 0) return `+${points}`;
+            if (points < 0) return `${points}`;
+            return "0";
+        }
+        
+        // Update score display with effects
+        function updateScoreDisplay() {
+            scoreEl.textContent = score;
+            
+            // Remove all classes first
+            scoreEl.className = 'score';
+            
+            // Add appropriate class
+            if (score > 0) {
+                scoreEl.classList.add('positive');
+            } else if (score < 0) {
+                scoreEl.classList.add('negative');
+            } else {
+                scoreEl.classList.add('zero');
+            }
+            
+            // Animation
+            scoreEl.style.transform = 'scale(1.15)';
+            setTimeout(() => {
+                scoreEl.style.transform = 'scale(1)';
+            }, 300);
+        }
+        
+        // Update patience bar
+        function updatePatienceBar() {
+            patienceBarEl.style.width = patience + '%';
+            patienceTextEl.textContent = Math.round(patience) + '%';
+            
+            // Update color based on patience
+            if (patience > 70) {
+                patienceBarEl.style.background = 'linear-gradient(90deg, #4ecdc4, #667eea)';
+            } else if (patience > 40) {
+                patienceBarEl.style.background = 'linear-gradient(90deg, #ffd93d, #ff9a3d)';
+            } else if (patience > 20) {
+                patienceBarEl.style.background = 'linear-gradient(90deg, #ff9a3d, #ff6b6b)';
+            } else {
+                patienceBarEl.style.background = 'linear-gradient(90deg, #ff6b6b, #ff5252)';
+            }
+        }
+        
+        // Check time events
+        function checkTimeEvents() {
+            if (time % 30 === 0 && time > 0) {
+                showNotification('⏰ 30 seconds passed! Time is flying...');
+            }
+            if (time % 13 === 0 && time > 0) {
+                showNotification('👻 13 seconds... spooky!');
+            }
+        }
+        
+        // Check push events
+        function checkPushEvents() {
+            if (pushes % 7 === 0 && pushes > 0) {
+                showNotification('🎱 7th push! Lucky number?');
+            }
+            if (pushes % 13 === 0 && pushes > 0) {
+                showNotification('😈 13th push! Unlucky?');
+            }
+        }
+        
+        // End game
+        function endGame(reason) {
+            gameOver = true;
+            isPlaying = false;
+            isTryingToStand = false;
+            
+            // Escape animation
+            personContainerEl.classList.remove('trying');
+            personContainerEl.classList.add('standing');
+            setTimeout(() => {
+                personContainerEl.style.opacity = '0.5';
+                personContainerEl.style.transform = 'translateX(-50%) translateX(100px)';
+            }, 500);
+            
+            // Show game over screen after delay
+            setTimeout(() => {
+                showGameOver(reason);
+            }, 1000);
+            
+            console.log(`🏃‍♂️ GAME OVER: ${reason}`);
+        }
+        
+        // Show game over
+        function showGameOver(reason) {
+            finalScoreEl.textContent = score;
+            finalTimeEl.textContent = time + 's';
+            finalPushesEl.textContent = pushes;
+            finalAttemptsEl.textContent = attempts;
+            finalPatienceEl.textContent = Math.round(patience) + '%';
+            
+            // Update final score display
+            finalScoreEl.className = 'score';
+            if (score > 0) finalScoreEl.classList.add('positive');
+            else if (score < 0) finalScoreEl.classList.add('negative');
+            else finalScoreEl.classList.add('zero');
+            
+            gameOverEl.style.display = 'flex';
+            pushBtnEl.disabled = true;
+        }
+        
+        // Hide game over
+        function hideGameOver() {
+            gameOverEl.style.display = 'none';
+        }
+        
+        // Reset game
+        function resetGame() {
+            startGame();
+            showNotification('🔄 Game reset! Starting over!');
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            console.log(message);
+            notificationEl.textContent = message;
+            notificationEl.style.display = 'block';
+            
+            // Random border color
+            const colors = ['#4ecdc4', '#667eea', '#ff6b6b', '#ffd93d', '#9b59b6'];
+            notificationEl.style.borderLeftColor = colors[Math.floor(Math.random() * colors.length)];
+            
             setTimeout(() => {
                 notificationEl.style.display = 'none';
             }, 3000);
         }
         
-        // Start when page loads - NO START BUTTON NEEDED!
+        // Start when page loads
         window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
