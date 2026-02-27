@@ -1,20 +1,21 @@
 // Service Worker для Couch Guardian PWA
-// Версия: 1.0.0
+// Версия: 2.0.0 - Все фичи реализованы
 
-const CACHE_NAME = 'couch-guardian-v1';
-const OFFLINE_URL = '/couch-guardian/offline.html';
+const CACHE_NAME = 'couch-guardian-v2';
+const OFFLINE_URL = 'offline.html';
 
 // Файлы для кэширования при установке
 const PRECACHE_URLS = [
-  '/couch-guardian/',
-  '/couch-guardian/index.html',
-  '/couch-guardian/manifest.json',
-  '/couch-guardian/icon-192x192.png',
-  '/couch-guardian/icon-512x512.png',
-  '/couch-guardian/sounds/push-positive.mp3',
-  '/couch-guardian/sounds/push-negative.mp3',
-  '/couch-guardian/sounds/cursed.mp3',
-  '/couch-guardian/sounds/level-up.mp3'
+  './',
+  './index.html',
+  './manifest.json',
+  './simple_game.html',
+  './index_simple.html',
+  './offline.html',
+  './service-worker.js',
+  './sound-system.js',
+  './add-sounds-to-buttons.js',
+  './generate-sounds.js'
 ];
 
 // Установка Service Worker
