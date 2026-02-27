@@ -225,6 +225,8 @@
         
         // Initialize - START GAME IMMEDIATELY
         function init() {
+            console.log('GAME: Smart Couch Guardian started!');
+            
             // Start game immediately
             startGame();
             
@@ -271,8 +273,6 @@
                     resetGame();
                 }
             });
-            
-            console.log('🎮 Smart Couch Guardian started!');
         }
         
         // Calculate attempt chance
@@ -328,7 +328,7 @@
             
             gameOverEl.style.display = 'none';
             
-            console.log('🎮 Game started - early phase (frequent attempts)');
+            console.log('GAME: Started - early phase (frequent attempts)');
         }
         
         // Person tries to stand
@@ -353,7 +353,7 @@
                 }
             }, standTime);
             
-            console.log(\⚠️ Attempt #\ (\ phase)\);
+            console.log('GAME: Attempt #' + attempts + ' (' + attemptPhase + ' phase)');
         }
         
         // Push person back
@@ -377,7 +377,7 @@
                     personEl.style.transform = 'scale(1)';
                 }, 200);
                 
-                console.log(\👍 Pushed back! (Phase: \)\);
+                console.log('GAME: Pushed back! (Phase: ' + attemptPhase + ')');
                 
             } else {
                 score += calculatePoints(false);
@@ -388,7 +388,7 @@
                     personEl.style.transform = 'scale(1)';
                 }, 200);
                 
-                console.log('💤 Unnecessary push...');
+                console.log('GAME: Unnecessary push...');
             }
             
             scoreEl.textContent = score;
@@ -447,13 +447,13 @@
             finalPushesEl.textContent = pushes;
             gameOverEl.style.display = 'flex';
             
-            console.log(\🏃‍♂️ GAME OVER: \ (Phase: \)\);
+            console.log('GAME OVER: ' + reason + ' (Phase: ' + attemptPhase + ')');
         }
         
         // Reset game
         function resetGame() {
             startGame();
-            console.log('🔄 Game reset');
+            console.log('GAME: Reset');
         }
         
         // Start when page loads
