@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🛋️ Couch Guardian Pro - Качественные анимации</title>
     <meta name="description" content="Абсурдная игра с анимациями уровня Flappy Bird. Плавная физика, отзывчивое управление, профессиональный геймплей.">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Couch Guardian">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    
+    <!-- Sound System -->
+    <script src="sound-system.js"></script>
+    <script src="generate-sounds.js"></script>
+    <script src="add-sounds-to-buttons.js"></script>
     <style>
         /* Reset и базовые стили */
         * {
@@ -763,24 +777,459 @@
         
         // ========== УПРАВЛЕНИЕ ==========
         function setupControls() {
-            // Мышь
-            elements.hand.addEventListener('mousedown', startDrag);
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', stopDrag);
+            // Определяем тип устройства
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            const isMobile = window.innerWidth <= 768;
             
-            // Тач
-            elements.hand.addEventListener('touchstart', startDragTouch);
-            document.addEventListener('touchmove', dragTouch);
+            console.log(`📱 Устройство: ${isTouchDevice ? 'Тач' : 'Мышь'}, ${isMobile ? 'Мобильное' : 'Десктоп'}`);
+            
+            // Мышь (только для десктопа)
+            if (!isTouchDevice) {
+                elements.hand.addEventListener('mousedown', startDrag);
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+                
+                // Двойной клик для быстрого толчка
+                elements.hand.addEventListener('dblclick', handleDoubleClick);
+                
+                // Колесико мыши для зума (опционально)
+                elements.gameArea.addEventListener('wheel', handleMouseWheel, { passive: false });
+            }
+            
+            // Тач управление (для мобильных и тач-устройств)
+            if (isTouchDevice) {
+                setupTouchControls();
+            }
+            
+            // Клавиатура (для всех устройств)
+            setupKeyboardControls();
+            
+            // Кнопки управления
+            setupButtonControls();
+            
+            // Жесты (для мобильных)
+            if (isTouchDevice) {
+                setupGestureControls();
+            }
+            
+            // Адаптивные элементы управления
+            setupAdaptiveControls(isMobile, isTouchDevice);
+            
+            // Предотвращаем нежелательное поведение
+            preventUndesiredBehavior();
+        }
+        
+        function setupTouchControls() {
+            // Основное тач управление
+            elements.hand.addEventListener('touchstart', startDragTouch, { passive: false });
+            document.addEventListener('touchmove', dragTouch, { passive: false });
             document.addEventListener('touchend', stopDrag);
             
-            // Клавиатура
+            // Быстрый тап для толчка
+            let lastTapTime = 0;
+            elements.hand.addEventListener('touchend', (e) => {
+                const currentTime = Date.now();
+                const tapLength = currentTime - lastTapTime;
+                
+                if (tapLength < 300 && tapLength > 0) {
+                    // Двойной тап
+                    e.preventDefault();
+                    pushCharacter();
+                }
+                
+                lastTapTime = currentTime;
+            });
+            
+            // Долгое нажатие для меню
+            let longPressTimer;
+            elements.hand.addEventListener('touchstart', (e) => {
+                longPressTimer = setTimeout(() => {
+                    showNotification('Меню', 'Удерживайте для дополнительных опций', '⚙️');
+                }, 1000);
+            }, { passive: true });
+            
+            elements.hand.addEventListener('touchend', () => {
+                clearTimeout(longPressTimer);
+            });
+            
+            // Свайпы
+            let touchStartX = 0;
+            let touchStartY = 0;
+            
+            elements.gameArea.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+            
+            elements.gameArea.addEventListener('touchend', (e) => {
+                if (!touchStartX || !touchStartY) return;
+                
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                
+                const diffX = touchStartX - touchEndX;
+                const diffY = touchStartY - touchEndY;
+                
+                // Определяем направление свайпа
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    // Горизонтальный свайп
+                    if (diffX > 50) {
+                        // Свайп влево
+                        showNotification('Свайп влево', 'Быстрая смена персонажа', '🔄');
+                        switchCharacter();
+                    } else if (diffX < -50) {
+                        // Свайп вправо
+                        showNotification('Свайп вправо', 'Показать лидерборд', '🏆');
+                        showLeaderboard();
+                    }
+                } else {
+                    // Вертикальный свайп
+                    if (diffY > 50) {
+                        // Свайп вверх
+                        showNotification('Свайп вверх', 'Быстрый старт игры', '🚀');
+                        if (!gameState.isPlaying) startGame();
+                    } else if (diffY < -50) {
+                        // Свайп вниз
+                        showNotification('Свайп вниз', 'Пауза/Продолжить', '⏸️');
+                        if (gameState.isPlaying) togglePause();
+                    }
+                }
+                
+                touchStartX = 0;
+                touchStartY = 0;
+            });
+        }
+        
+        function setupKeyboardControls() {
             document.addEventListener('keydown', handleKeyPress);
             
-            // Клик по руке
-            elements.hand.addEventListener('click', handleHandClick);
+            // Горячие клавиши для десктопа
+            if (!('ontouchstart' in window)) {
+                // WASD управление
+                document.addEventListener('keydown', (e) => {
+                    if (!gameState.isHandDragging) return;
+                    
+                    const speed = 0.02;
+                    switch(e.key.toLowerCase()) {
+                        case 'w':
+                        case 'arrowup':
+                            gameState.handPosition.y = Math.max(0.1, gameState.handPosition.y - speed);
+                            break;
+                        case 's':
+                        case 'arrowdown':
+                            gameState.handPosition.y = Math.min(0.9, gameState.handPosition.y + speed);
+                            break;
+                        case 'a':
+                        case 'arrowleft':
+                            gameState.handPosition.x = Math.max(0.1, gameState.handPosition.x - speed);
+                            break;
+                        case 'd':
+                        case 'arrowright':
+                            gameState.handPosition.x = Math.min(0.9, gameState.handPosition.x + speed);
+                            break;
+                    }
+                    
+                    updateHandPosition(gameState.handPosition.x, gameState.handPosition.y);
+                    updateProximityIndicator();
+                });
+            }
+        }
+        
+        function setupButtonControls() {
+            // Кнопка толчка
+            elements.pushButton.addEventListener('click', () => {
+                pushCharacter();
+                
+                // Визуальная обратная связь
+                elements.pushButton.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    elements.pushButton.style.transform = '';
+                }, 150);
+            });
             
+            // Кнопка старта
+            elements.startButton.addEventListener('click', () => {
+                startGame();
+                
+                // Визуальная обратная связь
+                elements.startButton.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    elements.startButton.style.transform = '';
+                }, 150);
+            });
+            
+            // Кнопка паузы
+            elements.pauseButton.addEventListener('click', () => {
+                togglePause();
+                
+                // Визуальная обратная связь
+                elements.pauseButton.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    elements.pauseButton.style.transform = '';
+                }, 150);
+            });
+            
+            // Кнопка шаринга
+            document.getElementById('shareButton').addEventListener('click', () => {
+                shareGame();
+                
+                // Визуальная обратная связь
+                const shareBtn = document.getElementById('shareButton');
+                shareBtn.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    shareBtn.style.transform = '';
+                }, 150);
+            });
+        }
+        
+        function setupGestureControls() {
+            // Пинч-зум (для устройств с поддержкой)
+            let initialDistance = null;
+            
+            elements.gameArea.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    initialDistance = getDistance(
+                        e.touches[0].clientX, e.touches[0].clientY,
+                        e.touches[1].clientX, e.touches[1].clientY
+                    );
+                }
+            }, { passive: true });
+            
+            elements.gameArea.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && initialDistance !== null) {
+                    e.preventDefault();
+                    
+                    const currentDistance = getDistance(
+                        e.touches[0].clientX, e.touches[0].clientY,
+                        e.touches[1].clientX, e.touches[1].clientY
+                    );
+                    
+                    const scale = currentDistance / initialDistance;
+                    
+                    // Масштабирование игровой области
+                    if (scale > 1.2) {
+                        elements.gameArea.style.transform = 'scale(1.1)';
+                        showHint('Увеличение');
+                    } else if (scale < 0.8) {
+                        elements.gameArea.style.transform = 'scale(0.9)';
+                        showHint('Уменьшение');
+                    }
+                }
+            }, { passive: false });
+            
+            elements.gameArea.addEventListener('touchend', () => {
+                initialDistance = null;
+                // Возвращаем нормальный масштаб
+                setTimeout(() => {
+                    elements.gameArea.style.transform = '';
+                }, 300);
+            });
+            
+            function getDistance(x1, y1, x2, y2) {
+                return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            }
+        }
+        
+        function setupAdaptiveControls(isMobile, isTouchDevice) {
+            // Адаптивные размеры элементов
+            if (isMobile) {
+                // Увеличиваем зону клика для мобильных
+                elements.hand.style.width = '70px';
+                elements.hand.style.height = '70px';
+                
+                // Увеличиваем кнопки
+                const buttons = document.querySelectorAll('.game-button');
+                buttons.forEach(btn => {
+                    btn.style.padding = '18px';
+                    btn.style.fontSize = '1.1rem';
+                });
+                
+                // Добавляем виртуальный джойстик для мобильных
+                if (isTouchDevice) {
+                    createVirtualJoystick();
+                }
+                
+                // Увеличиваем зону перетаскивания
+                elements.gameArea.style.touchAction = 'none';
+            } else {
+                // Для десктопа добавляем hover эффекты
+                const buttons = document.querySelectorAll('.game-button');
+                buttons.forEach(btn => {
+                    btn.addEventListener('mouseenter', () => {
+                        btn.style.transform = 'translateY(-2px)';
+                        btn.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+                    });
+                    
+                    btn.addEventListener('mouseleave', () => {
+                        btn.style.transform = '';
+                        btn.style.boxShadow = '';
+                    });
+                });
+                
+                // Эффект при наведении на руку
+                elements.hand.addEventListener('mouseenter', () => {
+                    elements.hand.style.transform = 'scale(1.1)';
+                    elements.hand.style.boxShadow = '0 15px 40px rgba(255, 255, 255, 0.5)';
+                });
+                
+                elements.hand.addEventListener('mouseleave', () => {
+                    elements.hand.style.transform = '';
+                    elements.hand.style.boxShadow = '';
+                });
+            }
+            
+            // Адаптивные подсказки
+            if (isMobile) {
+                showHint('Тапните по руке для толчка • Свайп для действий');
+            } else {
+                showHint('Кликните по руке или нажмите ПРОБЕЛ • WASD для движения');
+            }
+        }
+        
+        function createVirtualJoystick() {
+            // Создаем виртуальный джойстик для мобильных
+            const joystick = document.createElement('div');
+            joystick.id = 'virtual-joystick';
+            joystick.style.cssText = `
+                position: absolute;
+                bottom: 100px;
+                left: 30px;
+                width: 100px;
+                height: 100px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                display: none;
+                z-index: 5;
+                backdrop-filter: blur(10px);
+            `;
+            
+            const joystickKnob = document.createElement('div');
+            joystickKnob.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 40px;
+                height: 40px;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
+                cursor: move;
+            `;
+            
+            joystick.appendChild(joystickKnob);
+            document.body.appendChild(joystick);
+            
+            // Показываем джойстик только если нужно
+            // Можно активировать через настройки
+        }
+        
+        function preventUndesiredBehavior() {
             // Предотвращаем контекстное меню
             elements.gameArea.addEventListener('contextmenu', e => e.preventDefault());
+            
+            // Предотвращаем выделение текста
+            elements.gameArea.style.userSelect = 'none';
+            elements.gameArea.style.webkitUserSelect = 'none';
+            
+            // Предотвращаем масштабирование на мобильных
+            document.addEventListener('touchmove', function(e) {
+                if (e.scale !== 1 && e.target === elements.gameArea) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+            // Предотвращаем pull-to-refresh на мобильных
+            document.body.style.overscrollBehavior = 'none';
+            
+            // Предотвращаем bounce эффект на iOS
+            document.documentElement.style.height = '100%';
+            document.documentElement.style.overflow = 'hidden';
+        }
+        
+        function handleDoubleClick(e) {
+            e.preventDefault();
+            pushCharacter();
+            
+            // Визуальная обратная связь
+            elements.hand.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                elements.hand.style.transform = '';
+            }, 200);
+        }
+        
+        function handleMouseWheel(e) {
+            e.preventDefault();
+            
+            // Колесико мыши для тонкой настройки положения
+            const zoomSpeed = 0.01;
+            
+            if (e.deltaY < 0) {
+                // Прокрутка вверх - приближение
+                gameState.handPosition.x += (0.5 - gameState.handPosition.x) * zoomSpeed;
+                gameState.handPosition.y += (0.3 - gameState.handPosition.y) * zoomSpeed;
+            } else {
+                // Прокрутка вниз - отдаление
+                gameState.handPosition.x += (gameState.handPosition.x - 0.5) * zoomSpeed;
+                gameState.handPosition.y += (gameState.handPosition.y - 0.3) * zoomSpeed;
+            }
+            
+            updateHandPosition(gameState.handPosition.x, gameState.handPosition.y);
+            updateProximityIndicator();
+        }
+        
+        function switchCharacter() {
+            const newChar = gameState.selectedCharacter === 'chill' ? 'angry' : 'chill';
+            selectCharacter(newChar);
+        }
+        
+        function showLeaderboard() {
+            // Временная реализация - можно интегрировать с реальным лидербордом
+            showNotification('Лидерборд', 'Топ игроков загружается...', '🏆');
+            
+            // Здесь будет загрузка реального лидерборда
+            setTimeout(() => {
+                showNotification('Топ игроков', '1. Илья: 1250\n2. Анна: 980\n3. Максим: 750', '📊');
+            }, 500);
+        }
+        
+        function selectCharacter(char) {
+            gameState.selectedCharacter = char;
+            
+            // Обновляем визуал персонажа
+            elements.character.className = `character ${char}`;
+            elements.character.querySelector('.character-face').textContent = 
+                char === 'chill' ? '😌' : '⚡';
+            
+            // Обновляем кнопки выбора
+            const chillBtn = document.querySelector('button[onclick*="chill"]');
+            const angryBtn = document.querySelector('button[onclick*="angry"]');
+            
+            if (chillBtn && angryBtn) {
+                if (char === 'chill') {
+                    chillBtn.style.transform = 'scale(1.1)';
+                    chillBtn.style.boxShadow = '0 10px 25px rgba(78, 205, 196, 0.4)';
+                    angryBtn.style.transform = '';
+                    angryBtn.style.boxShadow = '';
+                } else {
+                    angryBtn.style.transform = 'scale(1.1)';
+                    angryBtn.style.boxShadow = '0 10px 25px rgba(255, 107, 107, 0.4)';
+                    chillBtn.style.transform = '';
+                    chillBtn.style.boxShadow = '';
+                }
+            }
+            
+            // Уведомление
+            showNotification(
+                'Персонаж выбран',
+                char === 'chill' ? 'Чилли - спокойный и предсказуемый' : 'Энерджи - быстрый и рискованный',
+                char === 'chill' ? '😌' : '⚡'
+            );
+            
+            // Звуковой эффект
+            if (window.gameSoundSystem) {
+                window.gameSoundSystem.play('button-click');
+            }
         }
         
         function startDrag(e) {
@@ -826,25 +1275,122 @@
         }
         
         function handleKeyPress(e) {
-            if (e.code === 'Space' && gameState.isPlaying && !gameState.isPaused) {
+            // Предотвращаем стандартное поведение для игровых клавиш
+            const gameKeys = ['Space', 'KeyP', 'KeyR', 'KeyS', 'KeyL', 'KeyH', 'Escape'];
+            
+            if (gameKeys.includes(e.code)) {
                 e.preventDefault();
-                pushCharacter();
             }
             
-            if (e.code === 'KeyP') {
-                e.preventDefault();
-                togglePause();
+            // Основные управления
+            switch(e.code) {
+                case 'Space':
+                    if (gameState.isPlaying && !gameState.isPaused) {
+                        pushCharacter();
+                    } else if (!gameState.isPlaying) {
+                        startGame();
+                    }
+                    break;
+                    
+                case 'KeyP':
+                case 'Escape':
+                    if (gameState.isPlaying) {
+                        togglePause();
+                    }
+                    break;
+                    
+                case 'KeyR':
+                    if (!gameState.isPlaying) {
+                        startGame();
+                    } else {
+                        // Перезапуск игры
+                        if (confirm('Перезапустить игру?')) {
+                            cleanup();
+                            setTimeout(startGame, 100);
+                        }
+                    }
+                    break;
+                    
+                case 'KeyS':
+                    // Быстрый шаринг
+                    shareGame();
+                    break;
+                    
+                case 'KeyL':
+                    // Показать лидерборд
+                    showLeaderboard();
+                    break;
+                    
+                case 'KeyH':
+                    // Показать справку
+                    showNotification('Управление', 
+                        'ПРОБЕЛ - толчок/старт\nP/ESC - пауза\nR - рестарт\nS - поделиться\nL - лидерборд\nWASD - движение руки\nДвойной клик - быстрый толчок',
+                        '🎮');
+                    break;
+                    
+                case 'Digit1':
+                    // Выбор персонажа 1
+                    selectCharacter('chill');
+                    break;
+                    
+                case 'Digit2':
+                    // Выбор персонажа 2
+                    selectCharacter('angry');
+                    break;
+                    
+                case 'KeyM':
+                    // Музыка вкл/выкл
+                    if (window.gameSoundSystem) {
+                        const enabled = window.gameSoundSystem.toggle();
+                        showNotification('Звук', enabled ? 'Включен' : 'Выключен', enabled ? '🔊' : '🔇');
+                    }
+                    break;
             }
             
-            if (e.code === 'KeyR' && !gameState.isPlaying) {
-                e.preventDefault();
-                startGame();
+            // Управление рукой с клавиатуры (только если игра активна)
+            if (gameState.isPlaying && !gameState.isPaused) {
+                const speed = 0.03;
+                switch(e.key.toLowerCase()) {
+                    case 'w':
+                    case 'arrowup':
+                        gameState.handPosition.y = Math.max(0.05, gameState.handPosition.y - speed);
+                        updateHandPosition(gameState.handPosition.x, gameState.handPosition.y);
+                        updateProximityIndicator();
+                        break;
+                        
+                    case 's':
+                    case 'arrowdown':
+                        gameState.handPosition.y = Math.min(0.95, gameState.handPosition.y + speed);
+                        updateHandPosition(gameState.handPosition.x, gameState.handPosition.y);
+                        updateProximityIndicator();
+                        break;
+                        
+                    case 'a':
+                    case 'arrowleft':
+                        gameState.handPosition.x = Math.max(0.05, gameState.handPosition.x - speed);
+                        updateHandPosition(gameState.handPosition.x, gameState.handPosition.y);
+                        updateProximityIndicator();
+                        break;
+                        
+                    case 'd':
+                    case 'arrowright':
+                        gameState.handPosition.x = Math.min(0.95, gameState.handPosition.x + speed);
+                        updateHandPosition(gameState.handPosition.x, gameState.handPosition.y);
+                        updateProximityIndicator();
+                        break;
+                }
             }
         }
         
         function handleHandClick(e) {
             if (gameState.isPlaying && !gameState.isPaused) {
                 pushCharacter();
+                
+                // Визуальная обратная связь
+                elements.hand.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    elements.hand.style.transform = '';
+                }, 150);
             }
         }
         
@@ -1051,6 +1597,8 @@
         function startGame() {
             if (gameState.isPlaying) return;
             
+            playButtonSound();
+            
             gameState.isPlaying = true;
             gameState.isPaused = false;
             
@@ -1122,6 +1670,9 @@
             
             // Визуальные эффекты
             createVisualEffects(pointsChange);
+            
+            // Звуковые эффекты
+            playPushSound(pointsChange);
             
             // Обновляем статистику
             updateStats();
@@ -1212,6 +1763,7 @@
             // Юбилейные толчки
             if (gameState.pushes % 10 === 0) {
                 showNotification('Юбилейный толчок!', `Вы сделали ${gameState.pushes} толчков!`, '🎉');
+                playGameSound('level_up');
             }
             
             // Особые правила при определенных условиях
@@ -1220,8 +1772,52 @@
             }
         }
         
+        // ========== ЗВУКОВЫЕ ЭФФЕКТЫ ==========
+        
+        function playPushSound(pointsChange) {
+            if (!window.gameSoundSystem || !window.gameSoundSystem.isSoundEnabled()) {
+                return;
+            }
+            
+            const isCursed = gameState.pushes % CONFIG.game.cursedPush === 0;
+            
+            if (isCursed) {
+                window.gameSoundSystem.playGameEvent('cursed_push');
+            } else if (pointsChange > 0) {
+                window.gameSoundSystem.playPushSound(pointsChange, false);
+            } else {
+                window.gameSoundSystem.playPushSound(pointsChange, false);
+            }
+        }
+        
+        function playGameSound(eventType) {
+            if (!window.gameSoundSystem || !window.gameSoundSystem.isSoundEnabled()) {
+                return;
+            }
+            
+            window.gameSoundSystem.playGameEvent(eventType);
+        }
+        
+        function playButtonSound() {
+            if (!window.gameSoundSystem || !window.gameSoundSystem.isSoundEnabled()) {
+                return;
+            }
+            
+            window.gameSoundSystem.playGameEvent('button_click');
+        }
+        
+        function playNotificationSound() {
+            if (!window.gameSoundSystem || !window.gameSoundSystem.isSoundEnabled()) {
+                return;
+            }
+            
+            window.gameSoundSystem.playGameEvent('notification');
+        }
+        
         function togglePause() {
             if (!gameState.isPlaying) return;
+            
+            playButtonSound();
             
             gameState.isPaused = !gameState.isPaused;
             
@@ -1319,6 +1915,158 @@
         if ('ontouchstart' in window) {
             document.body.classList.add('touch-device');
         }
+        
+        // ========== PWA FUNCTIONALITY ==========
+        
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker зарегистрирован:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('🔄 Обновление Service Worker найдено');
+                            
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('🆕 Новая версия доступна!');
+                                    showPWAUpdateNotification();
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('❌ Ошибка регистрации Service Worker:', error);
+                    });
+            });
+        }
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button
+            showInstallButton();
+            
+            console.log('📱 PWA установка доступна');
+        });
+        
+        function showInstallButton() {
+            const installBtn = document.createElement('button');
+            installBtn.innerHTML = '📱 Установить приложение';
+            installBtn.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 12px 24px;
+                background: linear-gradient(135deg, #4ecdc4, #44a08d);
+                color: white;
+                border: none;
+                border-radius: 25px;
+                font-weight: bold;
+                cursor: pointer;
+                z-index: 1000;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                transition: transform 0.3s ease;
+            `;
+            
+            installBtn.addEventListener('mouseenter', () => {
+                installBtn.style.transform = 'translateY(-2px)';
+            });
+            
+            installBtn.addEventListener('mouseleave', () => {
+                installBtn.style.transform = 'translateY(0)';
+            });
+            
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    console.log('✅ Пользователь установил PWA');
+                    installBtn.remove();
+                }
+                
+                deferredPrompt = null;
+            });
+            
+            document.body.appendChild(installBtn);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (installBtn.parentNode) {
+                    installBtn.style.opacity = '0';
+                    installBtn.style.transition = 'opacity 0.5s ease';
+                    setTimeout(() => {
+                        if (installBtn.parentNode) {
+                            installBtn.parentNode.removeChild(installBtn);
+                        }
+                    }, 500);
+                }
+            }, 10000);
+        }
+        
+        function showPWAUpdateNotification() {
+            if (Notification.permission === 'granted') {
+                new Notification('Couch Guardian', {
+                    body: 'Доступно обновление! Перезагрузите приложение.',
+                    icon: 'icon-192x192.png',
+                    tag: 'update-available'
+                });
+            }
+        }
+        
+        // Offline detection
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        
+        function updateOnlineStatus() {
+            const isOnline = navigator.onLine;
+            console.log(isOnline ? '✅ Онлайн' : '📴 Оффлайн');
+            
+            // Show notification
+            showNotification(
+                isOnline ? 'Интернет подключен' : 'Оффлайн режим',
+                isOnline ? 'Синхронизируем результаты...' : 'Игра работает локально'
+            );
+        }
+        
+        // Check if app is running in standalone mode
+        function isRunningAsPWA() {
+            return window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone ||
+                   document.referrer.includes('android-app://');
+        }
+        
+        // Apply PWA-specific styles if running as PWA
+        if (isRunningAsPWA()) {
+            console.log('📱 Запущено как PWA');
+            document.documentElement.style.setProperty('--pwa-safe-area', 'env(safe-area-inset-top)');
+        }
+        
+        // Initialize PWA on load
+        window.addEventListener('load', () => {
+            updateOnlineStatus();
+            
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            
+            // Check if page was launched from offline page
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('offline') === 'true') {
+                showNotification('Оффлайн режим', 'Игра работает без интернета');
+            }
+        });
     </script>
 </body>
 </html>
