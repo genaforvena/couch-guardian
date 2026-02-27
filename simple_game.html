@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛋️ Couch Guardian - Простая версия</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .game-logo {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 40px;
+            line-height: 1.4;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .feature-title {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .feature-desc {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 18px 36px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            min-width: 200px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 600px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-logo">🛋️</div>
+        <h1>Couch Guardian</h1>
+        <p class="tagline">Абсурдная игра где нужно не давать персонажу встать с дивана.<br>Странные правила, непредсказуемые очки, глобальный лидерборд.</p>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🎮</div>
+                <div class="feature-title">Профессиональный флоу</div>
+                <div class="feature-desc">6 экранов, понятный путь игрока</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">📱</div>
+                <div class="feature-title">Адаптивный дизайн</div>
+                <div class="feature-desc">Работает на всех устройствах</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🔊</div>
+                <div class="feature-title">Звуковая система</div>
+                <div class="feature-desc">TTS и звуковые эффекты</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🏆</div>
+                <div class="feature-title">Глобальный лидерборд</div>
+                <div class="feature-desc">Supabase бэкенд</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">😌</div>
+                <div class="feature-title">Выбор персонажа</div>
+                <div class="feature-desc">Чилли и Энерджи</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🎨</div>
+                <div class="feature-title">Качественные анимации</div>
+                <div class="feature-desc">Уровень Flappy Bird</div>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <a href="index.html" class="btn btn-primary">
+                <span>🎮</span> Играть сейчас
+            </a>
+            <a href="https://github.com/genaforvena/couch-guardian" class="btn btn-secondary" target="_blank">
+                <span>📂</span> GitHub репозиторий
+            </a>
+        </div>
+        
+        <div class="status">
+            <p>🎯 <strong>Все фичи реализованы!</strong> Игра готова для друзей.</p>
+            <p>📱 <strong>PWA:</strong> Можно установить на телефон</p>
+            <p>🔗 <strong>Ссылка для друзей:</strong> https://genaforvena.github.io/couch-guardian/</p>
+        </div>
+    </div>
+    
+    <script>
+        // Проверка загрузки
+        console.log('🎮 Couch Guardian - Простая версия загружена');
+        
+        // Проверка основной игры
+        fetch('index.html')
+            .then(response => {
+                if (response.ok) {
+                    console.log('✅ Основная игра доступна');
+                } else {
+                    console.log('⚠️ Основная игра недоступна');
+                }
+            })
+            .catch(error => {
+                console.log('❌ Ошибка загрузки основной игры:', error);
+            });
+    </script>
+</body>
+</html>
