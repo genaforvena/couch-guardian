@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian</title>
+    <title>Couch Guardian - Streak Only</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -31,17 +31,34 @@
             text-shadow: 0 0 10px #0f0;
             letter-spacing: 2px;
         }
-        .score {
-            font-size: 3.5rem;
+        .streak {
+            font-size: 4rem;
             font-weight: bold;
             margin: 10px 0;
             color: #0f0;
-            text-shadow: 0 0 15px #0f0;
+            text-shadow: 0 0 20px #0f0;
             font-family: 'Courier New', monospace;
+            transition: all 0.2s;
         }
-        .score.negative {
-            color: #f00;
-            text-shadow: 0 0 15px #f00;
+        .streak.high {
+            color: #ff0;
+            text-shadow: 0 0 20px #ff0;
+        }
+        .streak.record {
+            color: #0ff;
+            text-shadow: 0 0 25px #0ff;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .record-display {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            opacity: 0.7;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
         }
         .game-area {
             position: relative;
@@ -95,6 +112,11 @@
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
+        }
+        .warning.success {
+            color: #0f0;
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #0f0;
         }
         .stats {
             display: grid;
@@ -155,20 +177,24 @@
             margin-top: 10px;
             letter-spacing: 1px;
         }
-        .pulse {
-            animation: pulse 0.3s;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        .streak-bonus {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.8rem;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
         <h1>COUCH GUARDIAN</h1>
-        <div class="score" id="score">0</div>
+        
+        <div class="record-display">
+            RECORD: <span id="record">0</span>
+        </div>
+        
+        <div class="streak" id="streak">0</div>
         
         <div class="intensity">
             <div class="intensity-bar" id="intensityBar"></div>
@@ -189,14 +215,16 @@
                 <div class="stat-label">TIME</div>
             </div>
             <div class="stat">
-                <div class="stat-value" id="pushes">0</div>
-                <div class="stat-label">PUSHES</div>
+                <div class="stat-value" id="current">0</div>
+                <div class="stat-label">CURRENT</div>
             </div>
             <div class="stat">
                 <div class="stat-value" id="attempts">0</div>
                 <div class="stat-label">ATTEMPTS</div>
             </div>
         </div>
+        
+        <div class="streak-bonus" id="streakBonus"></div>
         
         <div class="controls">
             SPACE: PUSH • R: RESTART
@@ -205,56 +233,57 @@
     
     <div class="game-over" id="gameOver">
         <div class="game-over-content">
-            <h1 style="color: #f00; margin-bottom: 10px;">FAILED</h1>
-            <div class="score" style="font-size: 3rem;" id="finalScore">0</div>
+            <h1 style="color: #f00; margin-bottom: 10px;">STREAK BROKEN</h1>
+            <div class="streak" style="font-size: 3rem;" id="finalStreak">0</div>
             <div style="margin: 15px 0; font-size: 0.9rem;">
                 <div>TIME: <span id="finalTime">0</span>s</div>
-                <div>PUSHES: <span id="finalPushes">0</span></div>
+                <div>RECORD: <span id="finalRecord">0</span></div>
                 <div>ATTEMPTS: <span id="finalAttempts">0</span></div>
             </div>
             <div class="controls">
-                PRESS R TO RESTART
+                PRESS R TO TRY AGAIN
             </div>
         </div>
     </div>
     
     <script>
         // ============================================
-        // MINIMALISTIC HARD GAME
+        // STREAK-ONLY MINIMALISTIC HARD GAME
         // ============================================
         
-        // Game state
-        let score = 0;
+        // Game state - ONLY STREAK MATTERS
+        let currentStreak = 0;
+        let bestStreak = localStorage.getItem('couchGuardianRecord') || 0;
         let time = 0;
-        let pushes = 0;
         let attempts = 0;
         let intensity = 1;
         let isTryingToStand = false;
         let gameOver = false;
         let standTimer = null;
         let gameTimer = null;
-        let patternType = 0; // 0=normal, 1=fast, 2=double, 3=fake
+        let patternType = 0;
         
         // DOM elements
-        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const recordEl = document.getElementById('record');
         const timeEl = document.getElementById('time');
-        const pushesEl = document.getElementById('pushes');
+        const currentEl = document.getElementById('current');
         const attemptsEl = document.getElementById('attempts');
         const intensityBarEl = document.getElementById('intensityBar');
         const personEl = document.getElementById('person');
         const warningEl = document.getElementById('warning');
         const gameOverEl = document.getElementById('gameOver');
-        const finalScoreEl = document.getElementById('finalScore');
+        const finalStreakEl = document.getElementById('finalStreak');
         const finalTimeEl = document.getElementById('finalTime');
-        const finalPushesEl = document.getElementById('finalPushes');
+        const finalRecordEl = document.getElementById('finalRecord');
         const finalAttemptsEl = document.getElementById('finalAttempts');
+        const streakBonusEl = document.getElementById('streakBonus');
         
         // Start game
         function startGame() {
             // Reset state
-            score = 0;
+            currentStreak = 0;
             time = 0;
-            pushes = 0;
             attempts = 0;
             intensity = 1;
             isTryingToStand = false;
@@ -271,6 +300,7 @@
             warningEl.textContent = 'READY';
             warningEl.className = 'warning';
             intensityBarEl.style.width = '0%';
+            streakBonusEl.textContent = '';
             
             // Update display
             updateDisplay();
@@ -356,10 +386,12 @@
                     if (patternType === 3) {
                         // Fake - he doesn't stand
                         endAttempt(false);
-                        score += 5;
-                        warningEl.textContent = 'FAKE! +5';
-                        warningEl.className = 'warning';
-                        updateDisplay();
+                        if (currentStreak > 0) {
+                            currentStreak++;
+                            updateDisplay();
+                        }
+                        warningEl.textContent = 'FAKE! +1';
+                        warningEl.className = 'warning success';
                     } else {
                         endGame();
                     }
@@ -391,48 +423,67 @@
             
             if (isTryingToStand) {
                 // Successful push
-                pushes++;
-                pushesEl.textContent = pushes;
-                
-                let points = 0;
-                
-                switch(patternType) {
-                    case 0: points = 10; break;
-                    case 1: points = 20; break;
-                    case 2: points = 15; break;
-                    case 3: points = -10; break; // Fake push penalty
+                if (patternType === 3) {
+                    // Fake push - BREAK STREAK
+                    currentStreak = 0;
+                    warningEl.textContent = 'FAKE! STREAK BROKEN';
+                    warningEl.className = 'warning danger';
+                } else {
+                    // Real push - INCREASE STREAK
+                    currentStreak++;
+                    
+                    // Bonus for pattern difficulty
+                    let bonus = 0;
+                    switch(patternType) {
+                        case 0: bonus = 0; break; // normal
+                        case 1: bonus = 1; break; // fast
+                        case 2: bonus = 2; break; // double
+                    }
+                    
+                    // Intensity bonus
+                    bonus += Math.floor(intensity / 3);
+                    
+                    // Apply bonus
+                    if (bonus > 0) {
+                        currentStreak += bonus;
+                        streakBonusEl.textContent = `+${bonus}`;
+                        setTimeout(() => streakBonusEl.textContent = '', 1000);
+                    }
+                    
+                    warningEl.textContent = patternType === 1 ? 'FAST! +' + (1 + bonus) : 
+                                          patternType === 2 ? 'DOUBLE! +' + (1 + bonus) : 
+                                          '+' + (1 + bonus);
+                    warningEl.className = 'warning success';
                 }
-                
-                // Intensity bonus/penalty
-                points += Math.floor(intensity / 2);
-                
-                score += points;
-                
-                warningEl.textContent = points > 0 ? `+${points}` : `${points}`;
-                warningEl.className = points > 0 ? 'warning' : 'warning danger';
                 
                 endAttempt(true);
                 
             } else {
-                // Unnecessary push
-                const penalty = -5 - Math.floor(intensity / 3);
-                score += penalty;
-                
-                warningEl.textContent = `${penalty}`;
+                // Unnecessary push - BREAK STREAK
+                currentStreak = 0;
+                warningEl.textContent = 'WHY? STREAK BROKEN';
                 warningEl.className = 'warning danger';
             }
-            
-            // Pulse animation
-            scoreEl.classList.add('pulse');
-            setTimeout(() => scoreEl.classList.remove('pulse'), 300);
             
             updateDisplay();
         }
         
         // Update display
         function updateDisplay() {
-            scoreEl.textContent = score;
-            scoreEl.className = score >= 0 ? 'score' : 'score negative';
+            streakEl.textContent = currentStreak;
+            currentEl.textContent = currentStreak;
+            recordEl.textContent = bestStreak;
+            
+            // Update streak color
+            if (currentStreak === 0) {
+                streakEl.className = 'streak';
+            } else if (currentStreak > bestStreak) {
+                streakEl.className = 'streak record';
+            } else if (currentStreak >= 10) {
+                streakEl.className = 'streak high';
+            } else {
+                streakEl.className = 'streak';
+            }
         }
         
         // End game
@@ -443,12 +494,18 @@
             if (standTimer) clearTimeout(standTimer);
             if (gameTimer) clearInterval(gameTimer);
             
+            // Update record if needed
+            if (currentStreak > bestStreak) {
+                bestStreak = currentStreak;
+                localStorage.setItem('couchGuardianRecord', bestStreak);
+            }
+            
             personEl.textContent = '🏃‍♂️';
             warningEl.textContent = 'ESCAPED';
             
-            finalScoreEl.textContent = score;
+            finalStreakEl.textContent = currentStreak;
             finalTimeEl.textContent = time;
-            finalPushesEl.textContent = pushes;
+            finalRecordEl.textContent = bestStreak;
             finalAttemptsEl.textContent = attempts;
             
             gameOverEl.style.display = 'flex';
@@ -471,6 +528,7 @@
         
         // Initialize
         function init() {
+            updateDisplay();
             startGame();
         }
         
