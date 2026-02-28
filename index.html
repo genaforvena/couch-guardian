@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian</title>
+    <title>Couch Guardian - Diagnostic Version</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,12 +71,33 @@
             padding: 10px;
             border-radius: 5px;
         }
+        .debug {
+            background: rgba(255,0,0,0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .debug-title {
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="game">
-        <h1>Couch Guardian</h1>
+        <h1>Couch Guardian - Diagnostic Version</h1>
         <p>Keep the person on the couch! Press SPACE to push.</p>
+        
+        <div class="debug">
+            <div class="debug-title">DEBUG CONSOLE:</div>
+            <div id="debugLog"></div>
+        </div>
         
         <div class="score" id="score">0</div>
         
@@ -89,6 +110,7 @@
         
         <button onclick="pushPerson()">PUSH (SPACE)</button>
         <button onclick="resetGame()" style="background: #ff6b6b;">RESET (R)</button>
+        <button onclick="forceStart()" style="background: #4ecdc4;">FORCE START</button>
         
         <div class="stats">
             <div class="stat">
@@ -104,9 +126,32 @@
                 <div>Attempts</div>
             </div>
         </div>
+        
+        <div style="margin-top: 20px; font-size: 12px; opacity: 0.7;">
+            Game State: <span id="gameState">NOT STARTED</span> | 
+            Timer: <span id="timerState">NOT RUNNING</span> |
+            Device: <span id="deviceType">Detecting...</span>
+        </div>
     </div>
     
     <script>
+        // Debug logging
+        const debugLog = document.getElementById('debugLog');
+        function log(msg) {
+            const time = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${time}] ${msg}<br>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(msg);
+        }
+        
+        // Detect device
+        const deviceType = document.getElementById('deviceType');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        deviceType.textContent = isMobile ? 'MOBILE' : 'DESKTOP';
+        log(`Device detected: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
+        log(`User Agent: ${navigator.userAgent.substring(0, 50)}...`);
+        log(`Platform: ${navigator.platform}`);
+        
         // Game variables
         let score = 0;
         let time = 0;
@@ -125,10 +170,13 @@
         const attemptsEl = document.getElementById('attempts');
         const personEl = document.getElementById('person');
         const patienceEl = document.getElementById('patience');
+        const gameStateEl = document.getElementById('gameState');
+        const timerStateEl = document.getElementById('timerState');
         
         // Start game immediately - NO WAITING
         function startGame() {
-            console.log('GAME STARTING...');
+            log('=== START GAME CALLED ===');
+            gameStateEl.textContent = 'STARTING';
             
             // Reset everything
             score = 0;
@@ -142,6 +190,7 @@
             // Clear any existing timer
             if (gameTimer) {
                 clearInterval(gameTimer);
+                log('Cleared existing timer');
             }
             
             // Update display
@@ -149,9 +198,12 @@
             
             // Start timer
             gameTimer = setInterval(gameLoop, 1000);
+            timerStateEl.textContent = 'RUNNING';
+            log('Game timer started (1s interval)');
             
             // Keyboard controls
             document.addEventListener('keydown', function(e) {
+                log(`Key pressed: ${e.code}`);
                 if (e.code === 'Space') {
                     pushPerson();
                     e.preventDefault();
@@ -160,8 +212,10 @@
                     resetGame();
                 }
             });
+            log('Keyboard controls registered');
             
-            console.log('GAME STARTED! Time: ' + time + 's');
+            gameStateEl.textContent = 'RUNNING';
+            log(`GAME STARTED! Time: ${time}s, Device: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
         }
         
         // Main game loop
@@ -196,6 +250,7 @@
             
             personEl.classList.add('standing');
             personEl.textContent = '🚶';
+            log(`Attempt #${attempts} to stand up`);
             
             // Stand up in 3 seconds
             standTimer = setTimeout(function() {
@@ -223,13 +278,13 @@
                 score += getRandomPoints(10, 30);
                 patience = Math.min(100, patience + 30);
                 
-                console.log('Pushed back! Score: ' + score);
+                log(`Pushed back! Score: ${score}, Patience: ${patience}%`);
             } else {
                 // Unnecessary push
                 score += getRandomPoints(-5, 5);
                 patience = Math.max(0, patience - 10);
                 
-                console.log('Unnecessary push. Score: ' + score);
+                log(`Unnecessary push. Score: ${score}, Patience: ${patience}%`);
             }
             
             updateDisplay();
@@ -269,54 +324,89 @@
             personEl.textContent = '🏃‍♂️';
             personEl.classList.remove('standing');
             
+            gameStateEl.textContent = 'GAME OVER';
+            timerStateEl.textContent = 'STOPPED';
+            
             alert('GAME OVER!\n' + reason + '\n\nScore: ' + score + '\nTime: ' + time + 's\nPushes: ' + pushes);
             
-            console.log('Game over: ' + reason);
+            log(`GAME OVER: ${reason}. Score: ${score}, Time: ${time}s, Pushes: ${pushes}`);
         }
         
         // Reset game
         function resetGame() {
+            log('=== RESET GAME ===');
             startGame();
-            console.log('Game reset');
         }
         
-        // START GAME IMMEDIATELY - MULTIPLE METHODS
-        console.log('Script loaded, starting game...');
+        // Force start button
+        function forceStart() {
+            log('=== FORCE START BUTTON CLICKED ===');
+            startGame();
+        }
+        
+        // START GAME IMMEDIATELY - WITH DIAGNOSTICS
+        log('=== SCRIPT LOADED ===');
+        log(`Document readyState: ${document.readyState}`);
+        log(`Window loaded: ${window.performance.timing.domContentLoadedEventEnd > 0 ? 'YES' : 'NO'}`);
         
         // Method 1: Try immediate execution
         try {
+            log('Attempting immediate start...');
             startGame();
-            console.log('Game started via immediate call');
+            log('Game started via immediate call');
         } catch (e) {
-            console.log('Immediate call failed: ' + e.message);
+            log(`Immediate call failed: ${e.message}`);
         }
         
         // Method 2: DOMContentLoaded as backup
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOMContentLoaded fired');
+            log('DOMContentLoaded event fired');
             if (!gameTimer) { // If game not started yet
+                log('Starting game via DOMContentLoaded...');
                 startGame();
-                console.log('Game started via DOMContentLoaded');
+                log('Game started via DOMContentLoaded');
+            } else {
+                log('Game already started, skipping DOMContentLoaded');
             }
         });
         
         // Method 3: window.onload as final backup
         window.addEventListener('load', function() {
-            console.log('window.load fired');
+            log('window.load event fired');
             if (!gameTimer) { // If game not started yet
+                log('Starting game via window.load...');
                 startGame();
-                console.log('Game started via window.load');
+                log('Game started via window.load');
+            } else {
+                log('Game already started, skipping window.load');
             }
         });
         
         // Method 4: Timeout as last resort
         setTimeout(function() {
-            console.log('Timeout check');
+            log('Timeout check (1 second)...');
             if (!gameTimer) { // If game not started yet
+                log('Game not started yet, forcing via timeout...');
                 startGame();
-                console.log('Game started via timeout');
+                log('Game started via timeout');
+            } else {
+                log('Game already running');
             }
         }, 1000);
+        
+        // Method 5: Check after 3 seconds
+        setTimeout(function() {
+            log('Final check (3 seconds)...');
+            if (!gameTimer) {
+                log('ERROR: Game still not started after 3 seconds!');
+                gameStateEl.textContent = 'FAILED TO START';
+                gameStateEl.style.color = '#ff6b6b';
+            } else {
+                log('Game successfully running');
+            }
+        }, 3000);
+        
+        log('All startup methods registered');
     </script>
 </body>
 </html>
