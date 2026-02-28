@@ -3,56 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian - Diagnostic Version</title>
+    <title>Couch Guardian - Correct Logic</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: Arial, sans-serif;
             background: #1a1a2e;
             color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
             text-align: center;
-            padding: 20px;
         }
-        .game {
+        .game-container {
             max-width: 600px;
-            margin: 0 auto;
+            width: 100%;
             background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 10px;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { color: #4ecdc4; margin-bottom: 10px; }
+        .subtitle {
+            color: #ccc;
+            margin-bottom: 20px;
+            font-size: 14px;
         }
         .score {
-            font-size: 40px;
+            font-size: 4rem;
+            font-weight: bold;
             margin: 20px 0;
             color: #4ecdc4;
         }
-        .couch {
-            font-size: 80px;
-            margin: 20px 0;
+        .score.negative { color: #ff6b6b; }
+        .game-area {
+            position: relative;
+            height: 250px;
+            margin: 30px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .couch { 
+            font-size: 6rem; 
+            position: absolute; 
+            bottom: 20px; 
+            z-index: 1;
         }
         .person {
-            font-size: 60px;
-            margin: 10px 0;
-            transition: transform 0.3s;
+            font-size: 5rem;
+            position: absolute;
+            bottom: 70px;
+            transition: all 0.3s ease;
+            z-index: 2;
         }
-        .standing {
-            transform: translateY(-50px);
+        .person.standing {
+            bottom: 140px;
+            transform: rotate(5deg);
         }
-        button {
+        .btn {
             background: #667eea;
             color: white;
             border: none;
             padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            margin: 10px;
+            font-size: 1.2rem;
+            border-radius: 10px;
             cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            max-width: 300px;
+            transition: all 0.2s;
         }
-        button:hover {
+        .btn:hover {
             background: #764ba2;
+            transform: translateY(-2px);
         }
-        .patience {
-            height: 10px;
-            background: #333;
-            border-radius: 5px;
+        .btn:active {
+            transform: translateY(0);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        .patience-bar {
+            height: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
             margin: 20px 0;
             overflow: hidden;
         }
@@ -60,99 +117,109 @@
             height: 100%;
             background: #4ecdc4;
             width: 100%;
+            transition: width 0.5s ease;
         }
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-        }
-        .stat {
+        .instructions {
             background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 5px;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 14px;
+            opacity: 0.8;
         }
-        .debug {
-            background: rgba(255,0,0,0.1);
-            padding: 10px;
-            border-radius: 5px;
-            margin: 20px 0;
-            text-align: left;
-            font-family: monospace;
-            font-size: 12px;
-            max-height: 200px;
-            overflow-y: auto;
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        .debug-title {
-            color: #ff6b6b;
-            font-weight: bold;
-            margin-bottom: 5px;
+        .game-over-content {
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        @media (max-width: 600px) {
+            .person { font-size: 4rem; }
+            .couch { font-size: 5rem; }
+            .score { font-size: 3rem; }
+            .game-area { height: 200px; }
         }
     </style>
 </head>
 <body>
-    <div class="game">
-        <h1>Couch Guardian - Diagnostic Version</h1>
-        <p>Keep the person on the couch! Press SPACE to push.</p>
-        
-        <div class="debug">
-            <div class="debug-title">DEBUG CONSOLE:</div>
-            <div id="debugLog"></div>
-        </div>
+    <div class="game-container">
+        <h1>🛋️ Couch Guardian</h1>
+        <div class="subtitle">Keep him sitting! Don't let him stand up.</div>
         
         <div class="score" id="score">0</div>
         
-        <div class="patience">
-            <div class="patience-fill" id="patience" style="width: 100%"></div>
+        <div class="patience-bar">
+            <div class="patience-fill" id="patienceBar" style="width: 100%"></div>
         </div>
         
-        <div class="couch">🛋️</div>
-        <div class="person" id="person">🧍</div>
+        <div class="instructions">
+            <strong>ПРАВИЛЬНАЯ МЕХАНИКА:</strong><br>
+            1. Человек СИДИТ на диване (🧍 на 🛋️)<br>
+            2. Он пытается ВСТАТЬ когда ему скучно<br>
+            3. ТЫ должен НЕ ДАТЬ ему встать (толкни обратно)<br>
+            4. Если встал - GAME OVER!
+        </div>
         
-        <button onclick="pushPerson()">PUSH (SPACE)</button>
-        <button onclick="resetGame()" style="background: #ff6b6b;">RESET (R)</button>
-        <button onclick="forceStart()" style="background: #4ecdc4;">FORCE START</button>
+        <div class="game-area">
+            <div class="couch">🛋️</div>
+            <div class="person" id="person">🧍</div>
+        </div>
+        
+        <button class="btn" onclick="pushPerson()" id="pushBtn">
+            👊 PUSH HIM BACK (SPACE)
+        </button>
         
         <div class="stats">
             <div class="stat">
-                <div id="time">0s</div>
-                <div>Time</div>
+                <div class="stat-value" id="time">0s</div>
+                <div class="stat-label">Time</div>
             </div>
             <div class="stat">
-                <div id="pushes">0</div>
-                <div>Pushes</div>
+                <div class="stat-value" id="pushes">0</div>
+                <div class="stat-label">Pushes</div>
             </div>
             <div class="stat">
-                <div id="attempts">0</div>
-                <div>Attempts</div>
+                <div class="stat-value" id="attempts">0</div>
+                <div class="stat-label">Attempts</div>
             </div>
         </div>
         
-        <div style="margin-top: 20px; font-size: 12px; opacity: 0.7;">
-            Game State: <span id="gameState">NOT STARTED</span> | 
-            Timer: <span id="timerState">NOT RUNNING</span> |
-            Device: <span id="deviceType">Detecting...</span>
+        <button class="btn" onclick="resetGame()" id="resetBtn" style="background: #ff6b6b;">
+            🔄 Reset Game (R)
+        </button>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h1 style="color: #ff6b6b; font-size: 3rem;">🏃‍♂️ GAME OVER</h1>
+            <p style="font-size: 1.5rem; margin: 20px 0;">He stood up and left the couch!</p>
+            <div class="score" style="font-size: 4rem;" id="finalScore">0</div>
+            <p style="margin: 20px 0;">Time survived: <span id="finalTime">0s</span></p>
+            <p style="margin: 20px 0;">Successful pushes: <span id="finalPushes">0</span></p>
+            <p style="margin: 20px 0;">Total stand attempts: <span id="finalAttempts">0</span></p>
+            <button class="btn" onclick="resetGame()" style="background: #4ecdc4; margin-top: 20px;">
+                🔄 Play Again
+            </button>
         </div>
     </div>
     
     <script>
-        // Debug logging
-        const debugLog = document.getElementById('debugLog');
-        function log(msg) {
-            const time = new Date().toLocaleTimeString();
-            debugLog.innerHTML += `[${time}] ${msg}<br>`;
-            debugLog.scrollTop = debugLog.scrollHeight;
-            console.log(msg);
-        }
-        
-        // Detect device
-        const deviceType = document.getElementById('deviceType');
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        deviceType.textContent = isMobile ? 'MOBILE' : 'DESKTOP';
-        log(`Device detected: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
-        log(`User Agent: ${navigator.userAgent.substring(0, 50)}...`);
-        log(`Platform: ${navigator.platform}`);
-        
-        // Game variables
+        // ========== GAME STATE ==========
         let score = 0;
         let time = 0;
         let pushes = 0;
@@ -163,22 +230,26 @@
         let standTimer = null;
         let gameTimer = null;
         
-        // DOM elements
+        // ========== DOM ELEMENTS ==========
         const scoreEl = document.getElementById('score');
         const timeEl = document.getElementById('time');
         const pushesEl = document.getElementById('pushes');
         const attemptsEl = document.getElementById('attempts');
         const personEl = document.getElementById('person');
-        const patienceEl = document.getElementById('patience');
-        const gameStateEl = document.getElementById('gameState');
-        const timerStateEl = document.getElementById('timerState');
+        const patienceBarEl = document.getElementById('patienceBar');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+        const finalTimeEl = document.getElementById('finalTime');
+        const finalPushesEl = document.getElementById('finalPushes');
+        const finalAttemptsEl = document.getElementById('finalAttempts');
         
-        // Start game immediately - NO WAITING
+        // ========== GAME FUNCTIONS ==========
+        
+        // Start game - CORRECT LOGIC
         function startGame() {
-            log('=== START GAME CALLED ===');
-            gameStateEl.textContent = 'STARTING';
+            console.log('=== STARTING GAME WITH CORRECT LOGIC ===');
             
-            // Reset everything
+            // Reset state
             score = 0;
             time = 0;
             pushes = 0;
@@ -187,60 +258,54 @@
             isTryingToStand = false;
             gameOver = false;
             
-            // Clear any existing timer
-            if (gameTimer) {
-                clearInterval(gameTimer);
-                log('Cleared existing timer');
-            }
+            // Clear timers
+            if (standTimer) clearTimeout(standTimer);
+            if (gameTimer) clearInterval(gameTimer);
+            
+            // Reset person - SITTING on couch
+            personEl.className = 'person';
+            personEl.textContent = '🧍';
+            personEl.style.bottom = '70px';
             
             // Update display
             updateDisplay();
             
-            // Start timer
+            // Start game loop
             gameTimer = setInterval(gameLoop, 1000);
-            timerStateEl.textContent = 'RUNNING';
-            log('Game timer started (1s interval)');
             
-            // Keyboard controls
-            document.addEventListener('keydown', function(e) {
-                log(`Key pressed: ${e.code}`);
-                if (e.code === 'Space') {
-                    pushPerson();
-                    e.preventDefault();
-                }
-                if (e.code === 'KeyR') {
-                    resetGame();
-                }
-            });
-            log('Keyboard controls registered');
+            // Setup controls
+            setupControls();
             
-            gameStateEl.textContent = 'RUNNING';
-            log(`GAME STARTED! Time: ${time}s, Device: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
+            console.log('✅ Game started. Person is SITTING on couch.');
         }
         
-        // Main game loop
+        // Game loop - runs every second
         function gameLoop() {
             if (gameOver) return;
             
+            // Increase time
             time++;
             timeEl.textContent = time + 's';
             
-            // Decrease patience
+            // Decrease patience (gets bored)
             patience = Math.max(0, patience - 1);
-            updatePatience();
+            updatePatienceBar();
             
-            // Try to stand up
-            if (!isTryingToStand && patience < 30 && Math.random() < 0.3) {
-                startStandAttempt();
+            // Try to stand up when bored (patience low)
+            if (!isTryingToStand && patience < 30) {
+                const chance = 0.2 + (30 - patience) * 0.02; // 20% to 40% chance
+                if (Math.random() < chance) {
+                    startStandAttempt();
+                }
             }
             
-            // Game over if patience runs out
+            // Game over if completely bored (patience 0)
             if (patience <= 0 && !isTryingToStand) {
-                endGame('Ran out of patience');
+                endGame('Completely bored - left the couch');
             }
         }
         
-        // Person tries to stand
+        // Person tries to stand up
         function startStandAttempt() {
             if (isTryingToStand || gameOver) return;
             
@@ -248,71 +313,111 @@
             attempts++;
             attemptsEl.textContent = attempts;
             
+            // Visual: person starts standing
             personEl.classList.add('standing');
             personEl.textContent = '🚶';
-            log(`Attempt #${attempts} to stand up`);
             
-            // Stand up in 3 seconds
-            standTimer = setTimeout(function() {
+            console.log(`⚠️ Person attempting to stand (Attempt #${attempts})`);
+            
+            // Will stand up completely in 3 seconds if not pushed back
+            standTimer = setTimeout(() => {
                 if (isTryingToStand && !gameOver) {
-                    endGame('He stood up!');
+                    endGame('Successfully stood up!');
                 }
             }, 3000);
         }
         
-        // Push person back
+        // Push person back to sitting position
         function pushPerson() {
             if (gameOver) return;
             
-            pushes++;
-            pushesEl.textContent = pushes;
-            
             if (isTryingToStand) {
-                // Successful push
-                personEl.classList.remove('standing');
-                personEl.textContent = '🧍';
+                // SUCCESSFUL PUSH: Person was trying to stand, pushed back to sitting
+                pushes++;
+                pushesEl.textContent = pushes;
+                
+                // Clear stand timer
                 clearTimeout(standTimer);
                 isTryingToStand = false;
                 
-                // Add points and patience
-                score += getRandomPoints(10, 30);
+                // Return to sitting position
+                personEl.classList.remove('standing');
+                personEl.textContent = '🧍';
+                
+                // Add points for successful push
+                score += calculatePoints(true);
+                
+                // Restore some patience (happy to stay sitting)
                 patience = Math.min(100, patience + 30);
                 
-                log(`Pushed back! Score: ${score}, Patience: ${patience}%`);
-            } else {
-                // Unnecessary push
-                score += getRandomPoints(-5, 5);
-                patience = Math.max(0, patience - 10);
+                // Visual feedback
+                personEl.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    personEl.style.transform = 'scale(1)';
+                }, 200);
                 
-                log(`Unnecessary push. Score: ${score}, Patience: ${patience}%`);
+                console.log(`✅ Pushed back! Score: ${score}, Patience: ${patience}%`);
+                
+            } else {
+                // UNNECESSARY PUSH: Person was already sitting
+                score += calculatePoints(false);
+                patience = Math.max(0, patience - 5); // Annoyed by unnecessary push
+                
+                // Visual feedback
+                personEl.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    personEl.style.transform = 'scale(1)';
+                }, 200);
+                
+                console.log(`💤 Unnecessary push. Score: ${score}, Patience: ${patience}%`);
             }
             
             updateDisplay();
         }
         
-        // Get random points
-        function getRandomPoints(min, max) {
-            return Math.floor(Math.random() * (max - min + 1)) + min;
+        // Calculate points - ABSURD SYSTEM
+        function calculatePoints(isSuccessfulPush) {
+            if (isSuccessfulPush) {
+                // Successful push back - variable points
+                const base = Math.floor(Math.random() * 21) + 10; // 10-30
+                const bonus = time % 7 === 0 ? 7 : 0;
+                const penalty = pushes % 13 === 0 ? -13 : 0;
+                return base + bonus + penalty;
+            } else {
+                // Unnecessary push - usually negative
+                return Math.floor(Math.random() * 11) - 8; // -8 to +2
+            }
         }
         
         // Update display
         function updateDisplay() {
             scoreEl.textContent = score;
-            updatePatience();
+            
+            // Color code score
+            if (score > 0) {
+                scoreEl.className = 'score';
+            } else if (score < 0) {
+                scoreEl.className = 'score negative';
+            } else {
+                scoreEl.className = 'score';
+            }
+            
+            updatePatienceBar();
         }
         
-        // Update patience bar
-        function updatePatience() {
-            patienceEl.style.width = patience + '%';
+        // Update patience bar with color coding
+        function updatePatienceBar() {
+            patienceBarEl.style.width = patience + '%';
             
+            // Color based on patience level
             if (patience > 70) {
-                patienceEl.style.background = '#4ecdc4';
+                patienceBarEl.style.background = '#4ecdc4'; // Green - happy
             } else if (patience > 40) {
-                patienceEl.style.background = '#ffd93d';
+                patienceBarEl.style.background = '#ffd93d'; // Yellow - getting bored
             } else if (patience > 20) {
-                patienceEl.style.background = '#ff9a3d';
+                patienceBarEl.style.background = '#ff9a3d'; // Orange - bored
             } else {
-                patienceEl.style.background = '#ff6b6b';
+                patienceBarEl.style.background = '#ff6b6b'; // Red - very bored
             }
         }
         
@@ -321,92 +426,92 @@
             gameOver = true;
             isTryingToStand = false;
             
+            // Clear timers
+            if (standTimer) clearTimeout(standTimer);
+            if (gameTimer) clearInterval(gameTimer);
+            
+            // Show escaped person
+            personEl.className = 'person';
             personEl.textContent = '🏃‍♂️';
-            personEl.classList.remove('standing');
             
-            gameStateEl.textContent = 'GAME OVER';
-            timerStateEl.textContent = 'STOPPED';
+            // Update final stats
+            finalScoreEl.textContent = score;
+            finalTimeEl.textContent = time + 's';
+            finalPushesEl.textContent = pushes;
+            finalAttemptsEl.textContent = attempts;
             
-            alert('GAME OVER!\n' + reason + '\n\nScore: ' + score + '\nTime: ' + time + 's\nPushes: ' + pushes);
+            // Show game over screen
+            gameOverEl.style.display = 'flex';
             
-            log(`GAME OVER: ${reason}. Score: ${score}, Time: ${time}s, Pushes: ${pushes}`);
+            console.log(`🏃‍♂️ GAME OVER: ${reason}`);
         }
         
         // Reset game
         function resetGame() {
-            log('=== RESET GAME ===');
+            // Hide game over screen
+            gameOverEl.style.display = 'none';
+            
+            // Restart game
             startGame();
+            
+            console.log('🔄 Game reset');
         }
         
-        // Force start button
-        function forceStart() {
-            log('=== FORCE START BUTTON CLICKED ===');
-            startGame();
+        // Setup controls
+        function setupControls() {
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && !gameOver) {
+                    pushPerson();
+                    e.preventDefault();
+                } else if (e.code === 'KeyR') {
+                    resetGame();
+                }
+            });
+            
+            // Touch/click feedback
+            const pushBtn = document.getElementById('pushBtn');
+            pushBtn.addEventListener('mousedown', () => {
+                pushBtn.style.transform = 'scale(0.95)';
+            });
+            pushBtn.addEventListener('mouseup', () => {
+                pushBtn.style.transform = 'scale(1)';
+            });
+            pushBtn.addEventListener('mouseleave', () => {
+                pushBtn.style.transform = 'scale(1)';
+            });
         }
         
-        // START GAME IMMEDIATELY - WITH DIAGNOSTICS
-        log('=== SCRIPT LOADED ===');
-        log(`Document readyState: ${document.readyState}`);
-        log(`Window loaded: ${window.performance.timing.domContentLoadedEventEnd > 0 ? 'YES' : 'NO'}`);
+        // ========== START GAME ==========
         
-        // Method 1: Try immediate execution
-        try {
-            log('Attempting immediate start...');
-            startGame();
-            log('Game started via immediate call');
-        } catch (e) {
-            log(`Immediate call failed: ${e.message}`);
+        // Multiple start methods to ensure game starts
+        function initializeGame() {
+            console.log('Initializing game...');
+            
+            // Method 1: Try immediate start
+            try {
+                startGame();
+                console.log('✅ Game started immediately');
+                return;
+            } catch (e) {
+                console.log('Immediate start failed:', e);
+            }
+            
+            // Method 2: DOMContentLoaded
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => {
+                    console.log('DOMContentLoaded - starting game');
+                    startGame();
+                });
+            } else {
+                // Method 3: Already loaded
+                console.log('Document already loaded - starting game');
+                startGame();
+            }
         }
         
-        // Method 2: DOMContentLoaded as backup
-        document.addEventListener('DOMContentLoaded', function() {
-            log('DOMContentLoaded event fired');
-            if (!gameTimer) { // If game not started yet
-                log('Starting game via DOMContentLoaded...');
-                startGame();
-                log('Game started via DOMContentLoaded');
-            } else {
-                log('Game already started, skipping DOMContentLoaded');
-            }
-        });
+        // Start the game
+        initializeGame();
         
-        // Method 3: window.onload as final backup
-        window.addEventListener('load', function() {
-            log('window.load event fired');
-            if (!gameTimer) { // If game not started yet
-                log('Starting game via window.load...');
-                startGame();
-                log('Game started via window.load');
-            } else {
-                log('Game already started, skipping window.load');
-            }
-        });
-        
-        // Method 4: Timeout as last resort
-        setTimeout(function() {
-            log('Timeout check (1 second)...');
-            if (!gameTimer) { // If game not started yet
-                log('Game not started yet, forcing via timeout...');
-                startGame();
-                log('Game started via timeout');
-            } else {
-                log('Game already running');
-            }
-        }, 1000);
-        
-        // Method 5: Check after 3 seconds
-        setTimeout(function() {
-            log('Final check (3 seconds)...');
-            if (!gameTimer) {
-                log('ERROR: Game still not started after 3 seconds!');
-                gameStateEl.textContent = 'FAILED TO START';
-                gameStateEl.style.color = '#ff6b6b';
-            } else {
-                log('Game successfully running');
-            }
-        }, 3000);
-        
-        log('All startup methods registered');
-    </script>
-</body>
-</html>
+        // Debug info
+        console.log('=== COUCH GUARDIAN - CORRECT LOGIC ===');
