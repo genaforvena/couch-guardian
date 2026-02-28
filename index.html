@@ -2,148 +2,146 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian - Universal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Couch Guardian</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: monospace;
-            background: #000;
-            color: #0f0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-            text-align: center;
+        html, body {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-tap-highlight-color: transparent;
             -webkit-user-select: none;
             user-select: none;
         }
-        .game-container {
-            max-width: 400px;
-            width: 100%;
-            padding: 15px;
+        body {
+            display: flex;
+            flex-direction: column;
+            color: white;
         }
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-            text-shadow: 0 0 10px #0f0;
-            letter-spacing: 2px;
+        .header {
+            padding: 20px;
+            background: #111;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        .record {
+            font-size: 1rem;
+            color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+        .game-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            touch-action: manipulation;
         }
         .streak {
-            font-size: 4rem;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #0f0;
-            text-shadow: 0 0 20px #0f0;
+            font-size: 5rem;
+            font-weight: 900;
+            color: #4ecdc4;
+            margin-bottom: 30px;
+            text-shadow: 0 0 30px rgba(78, 205, 196, 0.7);
             font-family: 'Courier New', monospace;
+            transition: all 0.3s;
         }
-        .streak.record {
-            color: #0ff;
-            text-shadow: 0 0 25px #0ff;
+        .streak.new-record {
+            color: #ffd700;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
             animation: pulse 1s infinite;
         }
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
-        .record-display {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            opacity: 0.7;
-        }
-        .game-area {
+        .scene {
             position: relative;
-            height: 120px;
-            margin: 15px 0;
-            border: 1px solid #333;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            overflow: hidden;
+            width: 200px;
+            height: 200px;
+            margin: 20px 0;
         }
         .couch {
-            font-size: 3rem;
+            font-size: 5rem;
             position: absolute;
-            bottom: 15px;
-            z-index: 1;
-            opacity: 0.8;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
         }
         .person {
-            font-size: 2.8rem;
+            font-size: 4.5rem;
             position: absolute;
-            bottom: 45px;
-            transition: all 0.2s;
-            z-index: 2;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s;
         }
         .person.standing {
-            bottom: 85px;
-            animation: shake 0.1s infinite;
+            bottom: 140px;
+            transform: translateX(-50%) rotate(10deg);
         }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(2px); }
-        }
-        .warning {
-            font-size: 0.9rem;
-            margin: 10px 0;
-            min-height: 40px;
+        .message {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            text-align: center;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #333;
-            padding: 8px;
+            max-width: 90%;
         }
-        .warning.danger {
-            color: #f00;
-            border-color: #f00;
-            animation: blink 0.5s infinite;
+        .message.danger {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            animation: blink 1s infinite;
         }
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
+        .message.success {
+            color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            border: 2px solid rgba(78, 205, 196, 0.3);
+        }
         .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin: 15px 0;
-            font-size: 0.8rem;
-            border: 1px solid #333;
-            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid #333;
+        }
+        .stat {
+            text-align: center;
         }
         .stat-value {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            color: #0f0;
-            margin-bottom: 2px;
+            color: #4ecdc4;
         }
         .stat-label {
+            font-size: 0.8rem;
             opacity: 0.7;
-            font-size: 0.7rem;
-        }
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .control-btn {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid #0f0;
-            color: #0f0;
-            padding: 12px;
-            font-size: 0.9rem;
-            font-family: monospace;
-            cursor: pointer;
-        }
-        .control-btn.restart {
-            background: rgba(255, 0, 0, 0.1);
-            border-color: #f00;
-            color: #f00;
+            margin-top: 5px;
         }
         .game-over {
             display: none;
@@ -152,45 +150,72 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 100;
+            background: rgba(0, 0, 0, 0.95);
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
         .game-over-content {
-            border: 1px solid #f00;
-            padding: 20px;
-            max-width: 350px;
-            width: 90%;
-            background: rgba(0,0,0,0.9);
+            background: #111;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            border: 2px solid rgba(78, 205, 196, 0.3);
         }
-        @media (max-width: 768px) {
-            .control-btn {
-                padding: 15px;
-                font-size: 1rem;
-                min-height: 50px;
-            }
+        .game-over-title {
+            color: #ff6b6b;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .final-streak {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin: 20px 0;
+        }
+        .final-stats {
+            margin: 20px 0;
+        }
+        .final-stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+        .hint {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        @media (max-height: 700px) {
+            .streak { font-size: 4rem; margin-bottom: 20px; }
+            .scene { width: 180px; height: 180px; }
+            .couch { font-size: 4.5rem; }
+            .person { font-size: 4rem; }
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>COUCH GUARDIAN</h1>
-        
-        <div class="record-display">
-            RECORD: <span id="record">0</span>
-        </div>
-        
+    <div class="header">
+        <div class="title">🛋️ COUCH GUARDIAN</div>
+        <div class="record">RECORD: <span id="record">0</span></div>
+    </div>
+    
+    <div class="game-screen" id="gameScreen">
         <div class="streak" id="streak">0</div>
         
-        <div class="game-area">
+        <div class="scene">
             <div class="couch">🛋️</div>
             <div class="person" id="person">🧍</div>
         </div>
         
-        <div class="warning" id="warning">
-            READY
+        <div class="message" id="message">
+            Tap when he tries to stand
         </div>
         
         <div class="stats">
@@ -207,28 +232,29 @@
                 <div class="stat-label">ATTEMPTS</div>
             </div>
         </div>
-        
-        <div class="controls">
-            <button class="control-btn" id="pushBtn">
-                👊 PUSH
-            </button>
-            <button class="control-btn restart" id="restartBtn">
-                🔄 RESTART
-            </button>
-        </div>
     </div>
     
     <div class="game-over" id="gameOver">
         <div class="game-over-content">
-            <h1 style="color: #f00; margin-bottom: 10px;">STREAK BROKEN</h1>
-            <div class="streak" style="font-size: 3rem;" id="finalStreak">0</div>
-            <div style="margin: 15px 0; font-size: 0.9rem;">
-                <div>TIME: <span id="finalTime">0</span>s</div>
-                <div>RECORD: <span id="finalRecord">0</span></div>
+            <div class="game-over-title">STREAK BROKEN</div>
+            <div class="final-streak" id="finalStreak">0</div>
+            <div class="final-stats">
+                <div class="final-stat">
+                    <span>Time:</span>
+                    <span id="finalTime">0s</span>
+                </div>
+                <div class="final-stat">
+                    <span>Record:</span>
+                    <span id="finalRecord">0</span>
+                </div>
+                <div class="final-stat">
+                    <span>Attempts:</span>
+                    <span id="finalAttempts">0</span>
+                </div>
             </div>
-            <button class="control-btn restart" id="playAgainBtn">
-                🔄 PLAY AGAIN
-            </button>
+            <div class="hint">
+                Tap anywhere to play again
+            </div>
         </div>
     </div>
     
@@ -242,6 +268,7 @@
         let gameOver = false;
         let standTimer = null;
         let gameTimer = null;
+        let isNewRecord = false;
         
         // DOM elements
         const streakEl = document.getElementById('streak');
@@ -250,14 +277,13 @@
         const currentEl = document.getElementById('current');
         const attemptsEl = document.getElementById('attempts');
         const personEl = document.getElementById('person');
-        const warningEl = document.getElementById('warning');
+        const messageEl = document.getElementById('message');
         const gameOverEl = document.getElementById('gameOver');
         const finalStreakEl = document.getElementById('finalStreak');
         const finalTimeEl = document.getElementById('finalTime');
         const finalRecordEl = document.getElementById('finalRecord');
-        const pushBtn = document.getElementById('pushBtn');
-        const restartBtn = document.getElementById('restartBtn');
-        const playAgainBtn = document.getElementById('playAgainBtn');
+        const finalAttemptsEl = document.getElementById('finalAttempts');
+        const gameScreen = document.getElementById('gameScreen');
         
         // Start game
         function startGame() {
@@ -266,14 +292,15 @@
             attempts = 0;
             isTryingToStand = false;
             gameOver = false;
+            isNewRecord = false;
             
             if (standTimer) clearTimeout(standTimer);
             if (gameTimer) clearInterval(gameTimer);
             
             personEl.className = 'person';
             personEl.textContent = '🧍';
-            warningEl.textContent = 'READY';
-            warningEl.className = 'warning';
+            messageEl.textContent = 'Tap when he tries to stand';
+            messageEl.className = 'message';
             
             updateDisplay();
             
@@ -283,7 +310,7 @@
             
             gameOverEl.style.display = 'none';
             
-            setTimeout(startAttempt, 1000);
+            setTimeout(startAttempt, 1500);
         }
         
         // Game loop
@@ -293,7 +320,9 @@
             time++;
             timeEl.textContent = time;
             
-            if (!isTryingToStand && Math.random() < 0.2) {
+            // Chance to try standing increases with time
+            const chance = 0.15 + (time * 0.01);
+            if (!isTryingToStand && Math.random() < Math.min(chance, 0.4)) {
                 startAttempt();
             }
         }
@@ -306,39 +335,63 @@
             attempts++;
             attemptsEl.textContent = attempts;
             
+            // Less time as streak increases
+            const duration = Math.max(1000, 2000 - (currentStreak * 50));
+            
             personEl.classList.add('standing');
             personEl.textContent = '🚶';
-            warningEl.textContent = 'STANDING!';
-            warningEl.className = 'warning danger';
+            messageEl.textContent = 'HE\'S STANDING! TAP NOW!';
+            messageEl.className = 'message danger';
             
             standTimer = setTimeout(() => {
                 if (isTryingToStand && !gameOver) {
                     endGame();
                 }
-            }, 2000);
+            }, duration);
         }
         
-        // Push person
-        function pushPerson() {
-            if (gameOver) return;
+        // Handle tap
+        function handleTap() {
+            if (gameOver) {
+                startGame();
+                return;
+            }
             
             if (isTryingToStand) {
+                // Successful tap
                 currentStreak++;
                 clearTimeout(standTimer);
                 isTryingToStand = false;
                 
                 personEl.classList.remove('standing');
                 personEl.textContent = '🧍';
-                warningEl.textContent = '+1';
-                warningEl.className = 'warning';
+                messageEl.textContent = '+1';
+                messageEl.className = 'message success';
+                
+                // Check for new record
+                if (currentStreak > bestStreak) {
+                    isNewRecord = true;
+                    bestStreak = currentStreak;
+                    localStorage.setItem('couchGuardianRecord', bestStreak);
+                    recordEl.textContent = bestStreak;
+                }
                 
             } else {
-                currentStreak = 0;
-                warningEl.textContent = 'WHY? STREAK BROKEN';
-                warningEl.className = 'warning danger';
+                // Tap too early
+                if (currentStreak > 0) {
+                    currentStreak = 0;
+                    messageEl.textContent = 'Too early! Streak broken';
+                    messageEl.className = 'message danger';
+                }
             }
             
             updateDisplay();
+            
+            // Visual feedback
+            gameScreen.style.backgroundColor = 'rgba(78, 205, 196, 0.1)';
+            setTimeout(() => {
+                gameScreen.style.backgroundColor = '';
+            }, 200);
         }
         
         // Update display
@@ -347,8 +400,8 @@
             currentEl.textContent = currentStreak;
             recordEl.textContent = bestStreak;
             
-            if (currentStreak > bestStreak) {
-                streakEl.className = 'streak record';
+            if (isNewRecord && currentStreak > 0) {
+                streakEl.className = 'streak new-record';
             } else {
                 streakEl.className = 'streak';
             }
@@ -362,59 +415,50 @@
             if (standTimer) clearTimeout(standTimer);
             if (gameTimer) clearInterval(gameTimer);
             
-            if (currentStreak > bestStreak) {
+            if (isNewRecord) {
                 bestStreak = currentStreak;
                 localStorage.setItem('couchGuardianRecord', bestStreak);
             }
             
             personEl.textContent = '🏃‍♂️';
-            warningEl.textContent = 'ESCAPED';
+            messageEl.textContent = 'He escaped!';
             
             finalStreakEl.textContent = currentStreak;
-            finalTimeEl.textContent = time;
+            finalTimeEl.textContent = time + 's';
             finalRecordEl.textContent = bestStreak;
+            finalAttemptsEl.textContent = attempts;
             
             gameOverEl.style.display = 'flex';
         }
         
-        // Reset game
-        function resetGame() {
-            startGame();
-        }
-        
         // Setup controls
         function setupControls() {
-            // Keyboard
+            // Remove old listeners
+            gameScreen.removeEventListener('click', handleTap);
+            gameScreen.removeEventListener('touchstart', handleTouch);
+            gameOverEl.removeEventListener('click', handleTap);
+            
+            // Touch handler
+            function handleTouch(e) {
+                e.preventDefault();
+                handleTap();
+            }
+            
+            // Add listeners
+            gameScreen.addEventListener('click', handleTap);
+            gameScreen.addEventListener('touchstart', handleTouch);
+            gameOverEl.addEventListener('click', handleTap);
+            
+            // Keyboard for testing
             document.addEventListener('keydown', function(e) {
-                if (e.code === 'Space' && !gameOver) {
-                    pushPerson();
+                if (e.code === 'Space') {
+                    handleTap();
                     e.preventDefault();
-                } else if (e.code === 'KeyR') {
-                    resetGame();
-                }
-            });
-            
-            // Buttons
-            pushBtn.addEventListener('click', pushPerson);
-            restartBtn.addEventListener('click', resetGame);
-            playAgainBtn.addEventListener('click', resetGame);
-            
-            // Tap game area
-            document.querySelector('.game-area').addEventListener('click', function(e) {
-                if (!gameOver) {
-                    pushPerson();
-                }
-            });
-            
-            // Tap game over screen
-            gameOverEl.addEventListener('click', function(e) {
-                if (gameOver && e.target === gameOverEl) {
-                    resetGame();
                 }
             });
         }
         
-        // Start
+        // Start game
         startGame();
     </script>
 </body>
