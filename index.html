@@ -3,43 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian Test</title>
+    <title>Couch Guardian</title>
     <style>
-        body { margin: 0; padding: 20px; background: #000; color: white; text-align: center; font-family: Arial; }
-        h1 { color: #4ecdc4; }
-        .game { margin: 30px 0; }
-        .person { font-size: 4rem; margin: 20px; }
-        .btn { background: #4ecdc4; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; border-radius: 10px; cursor: pointer; }
-        .score { font-size: 3rem; color: #4ecdc4; margin: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            padding: 15px;
+            background: #111;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .title {
+            font-size: 1.5rem;
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        .record {
+            color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        .game {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .streak {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin: 20px;
+            font-family: monospace;
+        }
+        .scene {
+            margin: 20px;
+        }
+        .couch {
+            font-size: 4rem;
+        }
+        .person {
+            font-size: 3.5rem;
+            transition: transform 0.3s;
+        }
+        .person.standing {
+            transform: translateY(-50px);
+        }
+        .message {
+            margin: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            text-align: center;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .message.danger {
+            color: #ff6b6b;
+            background: rgba(255,107,107,0.1);
+        }
+        .message.success {
+            color: #4ecdc4;
+            background: rgba(78,205,196,0.1);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+        }
+        .stat {
+            text-align: center;
+        }
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .game-over-content {
+            background: #111;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 300px;
+        }
     </style>
 </head>
 <body>
-    <h1>🛋️ Couch Guardian - TEST</h1>
-    <p>If you see this, page loads correctly</p>
+    <div class="header">
+        <div class="title">🛋️ Couch Guardian</div>
+        <div class="record">RECORD: <span id="record">0</span></div>
+    </div>
     
-    <div class="game">
-        <div class="person" id="person">🧍</div>
-        <div class="score" id="score">Score: 0</div>
-        <button class="btn" onclick="pushPerson()">PUSH</button>
+    <div class="game" id="game">
+        <div class="streak" id="streak">0</div>
+        
+        <div class="scene">
+            <div class="couch">🛋️</div>
+            <div class="person" id="person">🧍</div>
+        </div>
+        
+        <div class="message" id="message">
+            Tap when he tries to stand
+        </div>
+        
+        <div class="stats">
+            <div class="stat">
+                <div id="time">0</div>
+                <div>TIME</div>
+            </div>
+            <div class="stat">
+                <div id="current">0</div>
+                <div>CURRENT</div>
+            </div>
+            <div class="stat">
+                <div id="attempts">0</div>
+                <div>ATTEMPTS</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 style="color: #ff6b6b;">STREAK BROKEN</h2>
+            <div class="streak" id="finalStreak">0</div>
+            <div style="margin: 15px 0;">
+                <div>Time: <span id="finalTime">0s</span></div>
+                <div>Record: <span id="finalRecord">0</span></div>
+            </div>
+            <p style="opacity: 0.7; margin-top: 10px;">Tap to play again</p>
+        </div>
     </div>
     
     <script>
-        console.log('TEST: Game loading...');
-        let score = 0;
-        let person = document.getElementById('person');
-        let scoreEl = document.getElementById('score');
+        // Game state
+        let currentStreak = 0;
+        let bestStreak = localStorage.getItem('couchRecord') || 0;
+        let time = 0;
+        let attempts = 0;
+        let isTryingToStand = false;
+        let gameOver = false;
+        let standTimer = null;
+        let gameTimer = null;
         
-        function pushPerson() {
-            score++;
-            scoreEl.textContent = 'Score: ' + score;
-            person.textContent = '👍';
-            setTimeout(() => person.textContent = '🧍', 300);
-            console.log('Pushed! Score:', score);
+        // DOM elements
+        const streakEl = document.getElementById('streak');
+        const recordEl = document.getElementById('record');
+        const timeEl = document.getElementById('time');
+        const currentEl = document.getElementById('current');
+        const attemptsEl = document.getElementById('attempts');
+        const personEl = document.getElementById('person');
+        const messageEl = document.getElementById('message');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalStreakEl = document.getElementById('finalStreak');
+        const finalTimeEl = document.getElementById('finalTime');
+        const finalRecordEl = document.getElementById('finalRecord');
+        const gameArea = document.getElementById('game');
+        
+        // Start game
+        function startGame() {
+            currentStreak = 0;
+            time = 0;
+            attempts = 0;
+            isTryingToStand = false;
+            gameOver = false;
+            
+            if (standTimer) clearTimeout(standTimer);
+            if (gameTimer) clearInterval(gameTimer);
+            
+            personEl.className = 'person';
+            personEl.textContent = '🧍';
+            messageEl.textContent = 'Tap when he tries to stand';
+            messageEl.className = 'message';
+            
+            updateDisplay();
+            
+            gameTimer = setInterval(gameLoop, 1000);
+            
+            setupControls();
+            
+            gameOverEl.style.display = 'none';
+            
+            setTimeout(startAttempt, 1500);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameOver) return;
+            
+            time++;
+            timeEl.textContent = time;
+            
+            if (!isTryingToStand && Math.random() < 0.2) {
+                startAttempt();
+            }
+        }
+        
+        // Start attempt
+        function startAttempt() {
+            if (isTryingToStand || gameOver) return;
+            
+            isTryingToStand = true;
+            attempts++;
+            attemptsEl.textContent = attempts;
+            
+            personEl.classList.add('standing');
+            personEl.textContent = '🚶';
+            messageEl.textContent = 'STANDING! TAP NOW!';
+            messageEl.className = 'message danger';
+            
+            standTimer = setTimeout(() => {
+                if (isTryingToStand && !gameOver) {
+                    endGame();
+                }
+            }, 2000);
+        }
+        
+        // Handle tap
+        function handleTap() {
+            if (gameOver) {
+                startGame();
+                return;
+            }
+            
+            if (isTryingToStand) {
+                currentStreak++;
+                clearTimeout(standTimer);
+                isTryingToStand = false;
+                
+                personEl.classList.remove('standing');
+                personEl.textContent = '🧍';
+                messageEl.textContent = '+1';
+                messageEl.className = 'message success';
+                
+                if (currentStreak > bestStreak) {
+                    bestStreak = currentStreak;
+                    localStorage.setItem('couchRecord', bestStreak);
+                    recordEl.textContent = bestStreak;
+                }
+                
+            } else {
+                if (currentStreak > 0) {
+                    currentStreak = 0;
+                    messageEl.textContent = 'Too early! Streak broken';
+                    messageEl.className = 'message danger';
+                }
+            }
+            
+            updateDisplay();
+        }
+        
+        // Update display
+        function updateDisplay() {
+            streakEl.textContent = currentStreak;
+            currentEl.textContent = currentStreak;
+            recordEl.textContent = bestStreak;
+        }
+        
+        // End game
+        function endGame() {
+            gameOver = true;
+            isTryingToStand = false;
+            
+            if (standTimer) clearTimeout(standTimer);
+            if (gameTimer) clearInterval(gameTimer);
+            
+            personEl.textContent = '🏃‍♂️';
+            messageEl.textContent = 'He escaped!';
+            
+            finalStreakEl.textContent = currentStreak;
+            finalTimeEl.textContent = time + 's';
+            finalRecordEl.textContent = bestStreak;
+            
+            gameOverEl.style.display = 'flex';
+        }
+        
+        // Setup controls
+        function setupControls() {
+            gameArea.addEventListener('click', handleTap);
+            gameOverEl.addEventListener('click', handleTap);
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space') {
+                    handleTap();
+                } else if (e.code === 'KeyR') {
+                    startGame();
+                }
+            });
         }
         
         // Start game
-        console.log('TEST: Game started successfully');
-        alert('Page loaded! Click PUSH to test.');
+        recordEl.textContent = bestStreak;
+        startGame();
     </script>
 </body>
 </html>
