@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian - Streak Only</title>
+    <title>Couch Guardian - Universal</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -18,12 +18,14 @@
             padding: 10px;
             text-align: center;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .game-container {
             max-width: 400px;
             width: 100%;
             padding: 15px;
-            position: relative;
         }
         h1 {
             font-size: 1.8rem;
@@ -38,11 +40,6 @@
             color: #0f0;
             text-shadow: 0 0 20px #0f0;
             font-family: 'Courier New', monospace;
-            transition: all 0.2s;
-        }
-        .streak.high {
-            color: #ff0;
-            text-shadow: 0 0 20px #ff0;
         }
         .streak.record {
             color: #0ff;
@@ -57,8 +54,6 @@
             font-size: 0.9rem;
             margin-bottom: 10px;
             opacity: 0.7;
-            border-bottom: 1px solid #333;
-            padding-bottom: 5px;
         }
         .game-area {
             position: relative;
@@ -101,22 +96,15 @@
             justify-content: center;
             border: 1px solid #333;
             padding: 8px;
-            background: rgba(0, 255, 0, 0.05);
         }
         .warning.danger {
             color: #f00;
-            background: rgba(255, 0, 0, 0.05);
             border-color: #f00;
             animation: blink 0.5s infinite;
         }
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
-        }
-        .warning.success {
-            color: #0f0;
-            background: rgba(0, 255, 0, 0.1);
-            border-color: #0f0;
         }
         .stats {
             display: grid;
@@ -135,21 +123,27 @@
         }
         .stat-label {
             opacity: 0.7;
-            text-transform: uppercase;
             font-size: 0.7rem;
-            letter-spacing: 1px;
         }
-        .intensity {
-            height: 4px;
-            background: #333;
-            margin: 10px 0;
-            position: relative;
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
         }
-        .intensity-bar {
-            height: 100%;
-            background: #0f0;
-            width: 0%;
-            transition: width 0.3s;
+        .control-btn {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 12px;
+            font-size: 0.9rem;
+            font-family: monospace;
+            cursor: pointer;
+        }
+        .control-btn.restart {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: #f00;
+            color: #f00;
         }
         .game-over {
             display: none;
@@ -171,18 +165,12 @@
             width: 90%;
             background: rgba(0,0,0,0.9);
         }
-        .controls {
-            font-size: 0.7rem;
-            opacity: 0.5;
-            margin-top: 10px;
-            letter-spacing: 1px;
-        }
-        .streak-bonus {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 0.8rem;
-            opacity: 0.7;
+        @media (max-width: 768px) {
+            .control-btn {
+                padding: 15px;
+                font-size: 1rem;
+                min-height: 50px;
+            }
         }
     </style>
 </head>
@@ -195,10 +183,6 @@
         </div>
         
         <div class="streak" id="streak">0</div>
-        
-        <div class="intensity">
-            <div class="intensity-bar" id="intensityBar"></div>
-        </div>
         
         <div class="game-area">
             <div class="couch">🛋️</div>
@@ -224,10 +208,13 @@
             </div>
         </div>
         
-        <div class="streak-bonus" id="streakBonus"></div>
-        
         <div class="controls">
-            SPACE: PUSH • R: RESTART
+            <button class="control-btn" id="pushBtn">
+                👊 PUSH
+            </button>
+            <button class="control-btn restart" id="restartBtn">
+                🔄 RESTART
+            </button>
         </div>
     </div>
     
@@ -238,30 +225,23 @@
             <div style="margin: 15px 0; font-size: 0.9rem;">
                 <div>TIME: <span id="finalTime">0</span>s</div>
                 <div>RECORD: <span id="finalRecord">0</span></div>
-                <div>ATTEMPTS: <span id="finalAttempts">0</span></div>
             </div>
-            <div class="controls">
-                PRESS R TO TRY AGAIN
-            </div>
+            <button class="control-btn restart" id="playAgainBtn">
+                🔄 PLAY AGAIN
+            </button>
         </div>
     </div>
     
     <script>
-        // ============================================
-        // STREAK-ONLY MINIMALISTIC HARD GAME
-        // ============================================
-        
-        // Game state - ONLY STREAK MATTERS
+        // Game state
         let currentStreak = 0;
         let bestStreak = localStorage.getItem('couchGuardianRecord') || 0;
         let time = 0;
         let attempts = 0;
-        let intensity = 1;
         let isTryingToStand = false;
         let gameOver = false;
         let standTimer = null;
         let gameTimer = null;
-        let patternType = 0;
         
         // DOM elements
         const streakEl = document.getElementById('streak');
@@ -269,52 +249,40 @@
         const timeEl = document.getElementById('time');
         const currentEl = document.getElementById('current');
         const attemptsEl = document.getElementById('attempts');
-        const intensityBarEl = document.getElementById('intensityBar');
         const personEl = document.getElementById('person');
         const warningEl = document.getElementById('warning');
         const gameOverEl = document.getElementById('gameOver');
         const finalStreakEl = document.getElementById('finalStreak');
         const finalTimeEl = document.getElementById('finalTime');
         const finalRecordEl = document.getElementById('finalRecord');
-        const finalAttemptsEl = document.getElementById('finalAttempts');
-        const streakBonusEl = document.getElementById('streakBonus');
+        const pushBtn = document.getElementById('pushBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
         
         // Start game
         function startGame() {
-            // Reset state
             currentStreak = 0;
             time = 0;
             attempts = 0;
-            intensity = 1;
             isTryingToStand = false;
             gameOver = false;
-            patternType = 0;
             
-            // Clear timers
             if (standTimer) clearTimeout(standTimer);
             if (gameTimer) clearInterval(gameTimer);
             
-            // Initial state
             personEl.className = 'person';
             personEl.textContent = '🧍';
             warningEl.textContent = 'READY';
             warningEl.className = 'warning';
-            intensityBarEl.style.width = '0%';
-            streakBonusEl.textContent = '';
             
-            // Update display
             updateDisplay();
             
-            // Start game loop
             gameTimer = setInterval(gameLoop, 1000);
             
-            // Setup controls
-            document.addEventListener('keydown', handleKeyPress);
+            setupControls();
             
-            // Hide game over
             gameOverEl.style.display = 'none';
             
-            // First attempt soon
             setTimeout(startAttempt, 1000);
         }
         
@@ -325,14 +293,7 @@
             time++;
             timeEl.textContent = time;
             
-            // Increase intensity
-            if (time % 10 === 0 && intensity < 10) {
-                intensity++;
-                intensityBarEl.style.width = (intensity * 10) + '%';
-            }
-            
-            // Auto-attempt based on intensity
-            if (!isTryingToStand && Math.random() < (0.1 + intensity * 0.05)) {
+            if (!isTryingToStand && Math.random() < 0.2) {
                 startAttempt();
             }
         }
@@ -345,76 +306,16 @@
             attempts++;
             attemptsEl.textContent = attempts;
             
-            // Choose pattern based on intensity
-            const patterns = [];
-            patterns.push(0); // normal
-            
-            if (intensity >= 3) patterns.push(1); // fast
-            if (intensity >= 5) patterns.push(2); // double
-            if (intensity >= 7) patterns.push(3); // fake
-            
-            patternType = patterns[Math.floor(Math.random() * patterns.length)];
-            
-            // Set duration and warning
-            let duration = 2000;
-            let warning = 'STANDING';
-            
-            switch(patternType) {
-                case 1: // fast
-                    duration = 1000;
-                    warning = 'FAST!';
-                    break;
-                case 2: // double
-                    duration = 1500;
-                    warning = 'DOUBLE';
-                    break;
-                case 3: // fake
-                    duration = 1800;
-                    warning = 'FAKE?';
-                    break;
-            }
-            
-            // Visual
             personEl.classList.add('standing');
             personEl.textContent = '🚶';
-            warningEl.textContent = warning;
+            warningEl.textContent = 'STANDING!';
             warningEl.className = 'warning danger';
             
-            // Timer
             standTimer = setTimeout(() => {
                 if (isTryingToStand && !gameOver) {
-                    if (patternType === 3) {
-                        // Fake - he doesn't stand
-                        endAttempt(false);
-                        if (currentStreak > 0) {
-                            currentStreak++;
-                            updateDisplay();
-                        }
-                        warningEl.textContent = 'FAKE! +1';
-                        warningEl.className = 'warning success';
-                    } else {
-                        endGame();
-                    }
+                    endGame();
                 }
-            }, duration);
-            
-            // Double pattern special
-            if (patternType === 2) {
-                setTimeout(() => {
-                    if (isTryingToStand && !gameOver) {
-                        warningEl.textContent = 'AGAIN!';
-                    }
-                }, duration / 2);
-            }
-        }
-        
-        // End attempt
-        function endAttempt(wasPushed) {
-            isTryingToStand = false;
-            personEl.classList.remove('standing');
-            personEl.textContent = '🧍';
-            
-            if (standTimer) clearTimeout(standTimer);
+            }, 2000);
         }
         
         // Push person
@@ -422,44 +323,16 @@
             if (gameOver) return;
             
             if (isTryingToStand) {
-                // Successful push
-                if (patternType === 3) {
-                    // Fake push - BREAK STREAK
-                    currentStreak = 0;
-                    warningEl.textContent = 'FAKE! STREAK BROKEN';
-                    warningEl.className = 'warning danger';
-                } else {
-                    // Real push - INCREASE STREAK
-                    currentStreak++;
-                    
-                    // Bonus for pattern difficulty
-                    let bonus = 0;
-                    switch(patternType) {
-                        case 0: bonus = 0; break; // normal
-                        case 1: bonus = 1; break; // fast
-                        case 2: bonus = 2; break; // double
-                    }
-                    
-                    // Intensity bonus
-                    bonus += Math.floor(intensity / 3);
-                    
-                    // Apply bonus
-                    if (bonus > 0) {
-                        currentStreak += bonus;
-                        streakBonusEl.textContent = `+${bonus}`;
-                        setTimeout(() => streakBonusEl.textContent = '', 1000);
-                    }
-                    
-                    warningEl.textContent = patternType === 1 ? 'FAST! +' + (1 + bonus) : 
-                                          patternType === 2 ? 'DOUBLE! +' + (1 + bonus) : 
-                                          '+' + (1 + bonus);
-                    warningEl.className = 'warning success';
-                }
+                currentStreak++;
+                clearTimeout(standTimer);
+                isTryingToStand = false;
                 
-                endAttempt(true);
+                personEl.classList.remove('standing');
+                personEl.textContent = '🧍';
+                warningEl.textContent = '+1';
+                warningEl.className = 'warning';
                 
             } else {
-                // Unnecessary push - BREAK STREAK
                 currentStreak = 0;
                 warningEl.textContent = 'WHY? STREAK BROKEN';
                 warningEl.className = 'warning danger';
@@ -474,13 +347,8 @@
             currentEl.textContent = currentStreak;
             recordEl.textContent = bestStreak;
             
-            // Update streak color
-            if (currentStreak === 0) {
-                streakEl.className = 'streak';
-            } else if (currentStreak > bestStreak) {
+            if (currentStreak > bestStreak) {
                 streakEl.className = 'streak record';
-            } else if (currentStreak >= 10) {
-                streakEl.className = 'streak high';
             } else {
                 streakEl.className = 'streak';
             }
@@ -494,7 +362,6 @@
             if (standTimer) clearTimeout(standTimer);
             if (gameTimer) clearInterval(gameTimer);
             
-            // Update record if needed
             if (currentStreak > bestStreak) {
                 bestStreak = currentStreak;
                 localStorage.setItem('couchGuardianRecord', bestStreak);
@@ -506,7 +373,6 @@
             finalStreakEl.textContent = currentStreak;
             finalTimeEl.textContent = time;
             finalRecordEl.textContent = bestStreak;
-            finalAttemptsEl.textContent = attempts;
             
             gameOverEl.style.display = 'flex';
         }
@@ -516,28 +382,40 @@
             startGame();
         }
         
-        // Handle key press
-        function handleKeyPress(e) {
-            if (e.code === 'Space' && !gameOver) {
-                pushPerson();
-                e.preventDefault();
-            } else if (e.code === 'KeyR') {
-                resetGame();
-            }
-        }
-        
-        // Initialize
-        function init() {
-            updateDisplay();
-            startGame();
+        // Setup controls
+        function setupControls() {
+            // Keyboard
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space' && !gameOver) {
+                    pushPerson();
+                    e.preventDefault();
+                } else if (e.code === 'KeyR') {
+                    resetGame();
+                }
+            });
+            
+            // Buttons
+            pushBtn.addEventListener('click', pushPerson);
+            restartBtn.addEventListener('click', resetGame);
+            playAgainBtn.addEventListener('click', resetGame);
+            
+            // Tap game area
+            document.querySelector('.game-area').addEventListener('click', function(e) {
+                if (!gameOver) {
+                    pushPerson();
+                }
+            });
+            
+            // Tap game over screen
+            gameOverEl.addEventListener('click', function(e) {
+                if (gameOver && e.target === gameOverEl) {
+                    resetGame();
+                }
+            });
         }
         
         // Start
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
+        startGame();
     </script>
 </body>
 </html>
