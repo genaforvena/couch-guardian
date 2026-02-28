@@ -3,130 +3,481 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian - Working</title>
+    <title>Couch Guardian - Perfect</title>
     <style>
-        body { margin: 0; padding: 20px; background: #000; color: white; text-align: center; font-family: Arial; }
-        h1 { color: #4ecdc4; margin: 20px 0; }
-        .game { margin: 30px; }
-        .couch { font-size: 4rem; margin: 10px; }
-        .person { font-size: 3.5rem; margin: 10px; transition: transform 0.3s; }
-        .person.standing { transform: translateY(-50px); }
-        .message { margin: 20px; padding: 15px; background: #222; border-radius: 10px; }
-        .btn { background: #4ecdc4; color: white; border: none; padding: 15px 30px; font-size: 1.2rem; border-radius: 10px; cursor: pointer; margin: 10px; }
-        .stats { display: flex; justify-content: center; gap: 30px; margin: 20px; }
-        .stat { text-align: center; }
-        .stat-value { font-size: 2rem; color: #4ecdc4; font-weight: bold; }
+        /* RESET */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* BASE */
+        body {
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* HEADER */
+        .header {
+            padding: 20px;
+            background: #111;
+            border-bottom: 2px solid #ff6b6b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        
+        .record {
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-weight: bold;
+        }
+        
+        /* MAIN GAME */
+        .game {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        /* STREAK */
+        .streak {
+            font-size: 5rem;
+            font-weight: 900;
+            color: #ff6b6b;
+            margin: 20px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .streak.new-record {
+            color: #ffd700;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* SCENE */
+        .scene {
+            position: relative;
+            width: 250px;
+            height: 180px;
+            margin: 30px 0;
+        }
+        
+        /* COUCH */
+        .couch {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 80px;
+            background: #8b4513;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        /* PERSON - SITTING ON COUCH */
+        .person {
+            position: absolute;
+            bottom: 40px; /* SITTING ON COUCH */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 80px;
+            transition: all 0.3s;
+        }
+        
+        .person-head {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 25px;
+            background: #ffcc99;
+            border-radius: 50%;
+        }
+        
+        .person-body {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 35px;
+            height: 40px;
+            background: #4ecdc4;
+            border-radius: 15px 15px 10px 10px;
+        }
+        
+        .person-arm-left, .person-arm-right {
+            position: absolute;
+            width: 12px;
+            height: 35px;
+            background: #4ecdc4;
+            border-radius: 6px;
+            top: 30px;
+            transform-origin: top center;
+            transition: transform 0.3s;
+        }
+        
+        .person-arm-left {
+            left: -8px;
+            transform: rotate(-30deg);
+        }
+        
+        .person-arm-right {
+            right: -8px;
+            transform: rotate(30deg);
+        }
+        
+        .person-leg-left, .person-leg-right {
+            position: absolute;
+            width: 12px;
+            height: 35px;
+            background: #4ecdc4;
+            border-radius: 6px;
+            top: 60px;
+        }
+        
+        .person-leg-left {
+            left: 8px;
+        }
+        
+        .person-leg-right {
+            right: 8px;
+        }
+        
+        /* STANDING - PERSON TRIES TO STAND UP */
+        .person.standing {
+            bottom: 100px; /* STANDS UP FROM COUCH */
+            transform: translateX(-50%) rotate(5deg);
+        }
+        
+        .person.standing .person-arm-left {
+            transform: rotate(-60deg);
+        }
+        
+        .person.standing .person-arm-right {
+            transform: rotate(60deg);
+        }
+        
+        /* MESSAGE */
+        .message {
+            margin: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid transparent;
+            font-weight: bold;
+        }
+        
+        .message.danger {
+            color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            border-color: rgba(255, 0, 0, 0.3);
+            animation: blink 0.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .message.success {
+            color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            border-color: rgba(0, 255, 0, 0.3);
+        }
+        
+        /* STATS */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        
+        /* TIMER */
+        .timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        
+        /* GAME OVER */
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .game-over-content {
+            background: #111;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 350px;
+            border: 2px solid #ff6b6b;
+        }
     </style>
 </head>
 <body>
-    <h1>🛋️ COUCH GUARDIAN - WORKING</h1>
-    <p>Game is loading correctly...</p>
+    <div class="header">
+        <div class="title">🛋️ COUCH GUARDIAN - PERFECT</div>
+        <div class="record">RECORD: <span id="record">0</span></div>
+    </div>
     
-    <div class="game">
-        <div class="couch">🛋️</div>
-        <div class="person" id="person">🧍</div>
+    <div class="timer" id="timer">TIME: 0.0s</div>
+    
+    <div class="game" id="game">
+        <div class="streak" id="streak">0</div>
+        
+        <div class="scene">
+            <div class="couch"></div>
+            <div class="person" id="person">
+                <div class="person-head"></div>
+                <div class="person-body"></div>
+                <div class="person-arm-left"></div>
+                <div class="person-arm-right"></div>
+                <div class="person-leg-left"></div>
+                <div class="person-leg-right"></div>
+            </div>
+        </div>
         
         <div class="message" id="message">
-            Person is SITTING on couch. Click PUSH when he tries to STAND.
+            Person is SITTING on couch. Tap when he tries to STAND.
         </div>
         
         <div class="stats">
             <div class="stat">
-                <div class="stat-value" id="streak">0</div>
-                <div>STREAK</div>
-            </div>
-            <div class="stat">
                 <div class="stat-value" id="time">0</div>
                 <div>TIME</div>
             </div>
+            <div class="stat">
+                <div class="stat-value" id="current">0</div>
+                <div>CURRENT</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="attempts">0</div>
+                <div>ATTEMPTS</div>
+            </div>
         </div>
-        
-        <button class="btn" onclick="pushPerson()">PUSH</button>
-        <button class="btn" onclick="startGame()">RESTART</button>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 style="color: #ff0000;">TOO SLOW!</h2>
+            <div class="streak" id="finalStreak">0</div>
+            <div style="margin: 15px 0;">
+                <div>Time: <span id="finalTime">0s</span></div>
+                <div>Record: <span id="finalRecord">0</span></div>
+                <div>Best Reaction: <span id="finalReaction">--</span></div>
+            </div>
+            <p style="opacity: 0.7; margin-top: 10px;">Tap to try again</p>
+        </div>
     </div>
     
     <script>
+        // ===== PERFECT VERSION =====
+        // ALL FIXES INCLUDED:
+        // 1. Person SITS on couch (not stands)
+        // 2. Person tries to STAND UP (not sit down)
+        // 3. Hard difficulty
+        // 4. Beautiful graphics
+        // 5. Working mechanics
+        
         // Game state
-        let streak = 0;
+        let currentStreak = 0;
+        let bestStreak = localStorage.getItem('couchPerfectRecord') || 0;
         let time = 0;
-        let isTryingToStand = false;
+        let attempts = 0;
+        let isTryingToStand = false; // FALSE = sitting, TRUE = trying to stand
+        let gameOver = false;
         let standTimer = null;
         let gameTimer = null;
+        let reactionTimer = null;
+        let bestReactionTime = null;
         
         // DOM elements
+        const streakEl = document.getElementById('streak');
+        const recordEl = document.getElementById('record');
+        const timeEl = document.getElementById('time');
+        const currentEl = document.getElementById('current');
+        const attemptsEl = document.getElementById('attempts');
         const personEl = document.getElementById('person');
         const messageEl = document.getElementById('message');
-        const streakEl = document.getElementById('streak');
-        const timeEl = document.getElementById('time');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalStreakEl = document.getElementById('finalStreak');
+        const finalTimeEl = document.getElementById('finalTime');
+        const finalRecordEl = document.getElementById('finalRecord');
+        const finalReactionEl = document.getElementById('finalReaction');
+        const gameArea = document.getElementById('game');
+        const timerEl = document.getElementById('timer');
         
         // Start game
         function startGame() {
-            streak = 0;
+            // Reset state
+            currentStreak = 0;
             time = 0;
-            isTryingToStand = false;
+            attempts = 0;
+            isTryingToStand = false; // Person is SITTING
+            gameOver = false;
             
+            // Clear timers
             clearTimeout(standTimer);
             clearInterval(gameTimer);
+            clearInterval(reactionTimer);
             
+            // Reset visuals - PERSON IS SITTING ON COUCH
             personEl.className = 'person';
-            personEl.textContent = '🧍';
-            messageEl.textContent = 'Person is SITTING on couch. Click PUSH when he tries to STAND.';
+            messageEl.textContent = 'Person is SITTING on couch. Tap when he tries to STAND.';
+            messageEl.className = 'message';
+            timerEl.textContent = 'TIME: 0.0s';
             
             updateDisplay();
             
-            gameTimer = setInterval(() => {
-                time++;
-                timeEl.textContent = time;
-                
-                // Random attempt to stand
-                if (!isTryingToStand && Math.random() < 0.3) {
-                    startAttempt();
-                }
-            }, 1000);
+            // Start game loop
+            gameTimer = setInterval(gameLoop, 1000);
             
-            // First attempt soon
+            // Setup controls
+            setupControls();
+            
+            // Hide game over
+            gameOverEl.style.display = 'none';
+            
+            // Start first attempt
             setTimeout(startAttempt, 1500);
         }
         
-        // Start attempt
-        function startAttempt() {
-            if (isTryingToStand) return;
+        // Game loop
+        function gameLoop() {
+            if (gameOver) return;
             
-            isTryingToStand = true;
-            personEl.classList.add('standing');
-            personEl.textContent = '🚶';
-            messageEl.textContent = 'HE IS STANDING! CLICK PUSH NOW!';
-            messageEl.style.color = '#ff6b6b';
+            time++;
+            timeEl.textContent = time;
             
-            standTimer = setTimeout(() => {
-                if (isTryingToStand) {
-                    messageEl.textContent = 'TOO SLOW! He stood up.';
-                    messageEl.style.color = '#ff0000';
-                    personEl.textContent = '🏃‍♂️';
-                    setTimeout(startGame, 2000);
-                }
-            }, 2000);
+            // Chance to try standing
+            if (!isTryingToStand && Math.random() < 0.3) {
+                startAttempt();
+            }
         }
         
-        // Push person back
-        function pushPerson() {
+        // Start attempt - PERSON TRIES TO STAND UP
+        function startAttempt() {
+            if (isTryingToStand || gameOver) return;
+            
+            isTryingToStand = true; // Now trying to stand
+            attempts++;
+            attemptsEl.textContent = attempts;
+            
+            // Calculate time - HARD MODE
+            let reactionTime = Math.max(400, 1200 - (currentStreak * 50));
+            
+            // Visual feedback - PERSON STANDS UP
+            personEl.classList.add('standing');
+            messageEl.textContent = 'HE IS STANDING UP! TAP NOW!';
+            messageEl.className = 'message danger';
+            
+            // Start reaction timer
+            let startTime = Date.now();
+            reactionTimer = setInterval(() => {
+                if (isTryingToStand && !gameOver) {
+                    let elapsed = (Date.now() - startTime) / 1000;
+                    timerEl.textContent = 'TIME: ' + elapsed.toFixed(1) + 's';
+                }
+            }, 50);
+            
+            // Set timeout - if not pushed, person stands up
+            standTimer = setTimeout(() => {
+                if (isTryingToStand && !gameOver) {
+                    endGame();
+                }
+            }, reactionTime);
+        }
+        
+        // Handle tap - PUSH PERSON BACK TO COUCH
+        function handleTap() {
+            if (gameOver) {
+                startGame();
+                return;
+            }
+            
             if (isTryingToStand) {
-                // Successful push
-                streak++;
-                clearTimeout(standTimer);
-                isTryingToStand = false;
+                // Calculate reaction time
+                clearInterval(reactionTimer);
+                let reactionTime = parseFloat(timerEl.textContent.replace('TIME: ', '').replace('s', ''));
                 
+                // Update best reaction
+                if (!bestReactionTime || reactionTime < bestReactionTime) {
+                    bestReactionTime = reactionTime;
+                }
+                
+                // Successful push - PERSON SITS BACK DOWN
+                currentStreak++;
+                clearTimeout(standTimer);
+                isTryingToStand = false; // Back to sitting
+                
+                // Visual feedback - PERSON SITS BACK ON COUCH
                 personEl.classList.remove('standing');
-                personEl.textContent = '🧍';
-                messageEl.textContent = '+1! Person is sitting again.';
-                messageEl.style.color = '#4ecdc4';
+                messageEl.textContent = '+1! Person sits back down. (' + reactionTime.toFixed(2) + 's)';
+                messageEl.className = 'message success';
+                timerEl.textContent = 'TIME: 0.0s';
+                
+                if (currentStreak > bestStreak) {
+                    bestStreak = currentStreak;
+                    localStorage.setItem('couchPerfectRecord', bestStreak);
+                    recordEl.textContent = bestStreak;
+                    streakEl.classList.add('new-record');
+                }
                 
             } else {
-                // Push too early
-                if (streak > 0) {
-                    streak = 0;
-                    messageEl.textContent = 'Too early! Streak broken.';
-                    messageEl.style.color = '#ff6b6b';
+                // Tap too early - PERSON IS STILL SITTING
+                if (currentStreak > 0) {
+                    currentStreak = Math.max(0, currentStreak - 2);
+                    messageEl.textContent = 'Too early! Person was still SITTING. -2';
+                    messageEl.className = 'message danger';
                 }
             }
             
@@ -135,24 +486,57 @@
         
         // Update display
         function updateDisplay() {
-            streakEl.textContent = streak;
-            timeEl.textContent = time;
+            streakEl.textContent = currentStreak;
+            currentEl.textContent = currentStreak;
+            recordEl.textContent = bestStreak;
+            
+            if (currentStreak === 0) {
+                streakEl.classList.remove('new-record');
+            }
         }
         
-        // Start game on load
-        startGame();
-        
-        // Keyboard controls
-        document.addEventListener('keydown', function(e) {
-            if (e.code === 'Space') {
-                pushPerson();
-                e.preventDefault();
-            } else if (e.code === 'KeyR') {
-                startGame();
+        // End game - PERSON STOOD UP
+        function endGame() {
+            gameOver = true;
+            isTryingToStand = false;
+            
+            clearInterval(reactionTimer);
+            clearTimeout(standTimer);
+            clearInterval(gameTimer);
+            
+            if (currentStreak > bestStreak) {
+                bestStreak = currentStreak;
+                localStorage.setItem('couchPerfectRecord', bestStreak);
             }
-        });
+            
+            messageEl.textContent = 'TOO SLOW! Person stood up.';
+            timerEl.textContent = 'TIME: 0.0s';
+            
+            finalStreakEl.textContent = currentStreak;
+            finalTimeEl.textContent = time + 's';
+            finalRecordEl.textContent = bestStreak;
+            finalReactionEl.textContent = bestReactionTime ? bestReactionTime.toFixed(2) + 's' : '--';
+            
+            gameOverEl.style.display = 'flex';
+        }
         
-        console.log('Couch Guardian loaded successfully');
+        // Setup controls
+        function setupControls() {
+            gameArea.addEventListener('click', handleTap);
+            gameOverEl.addEventListener('click', handleTap);
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space') {
+                    handleTap();
+                } else if (e.code === 'KeyR') {
+                    startGame();
+                }
+            });
+        }
+        
+        // Start game
+        recordEl.textContent = bestStreak;
+        startGame();
     </script>
 </body>
 </html>
