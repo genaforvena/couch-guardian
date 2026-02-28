@@ -3,112 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Couch Guardian - Challenging Version</title>
+    <title>Couch Guardian</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            background: #1a1a2e;
-            color: white;
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 10px;
             text-align: center;
+            overflow: hidden;
         }
         .game-container {
-            max-width: 500px;
+            max-width: 400px;
             width: 100%;
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            padding: 15px;
+            position: relative;
         }
         h1 {
-            color: #4ecdc4;
-            margin-bottom: 10px;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px #0f0;
+            letter-spacing: 2px;
         }
         .score {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: bold;
-            margin: 15px 0;
-            color: #4ecdc4;
+            margin: 10px 0;
+            color: #0f0;
+            text-shadow: 0 0 15px #0f0;
+            font-family: 'Courier New', monospace;
         }
         .score.negative {
-            color: #ff6b6b;
+            color: #f00;
+            text-shadow: 0 0 15px #f00;
         }
         .game-area {
             position: relative;
-            height: 150px;
-            margin: 20px 0;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
+            height: 120px;
+            margin: 15px 0;
+            border: 1px solid #333;
             display: flex;
             align-items: flex-end;
             justify-content: center;
             overflow: hidden;
         }
         .couch {
-            font-size: 4rem;
+            font-size: 3rem;
             position: absolute;
-            bottom: 10px;
+            bottom: 15px;
             z-index: 1;
+            opacity: 0.8;
         }
         .person {
-            font-size: 3.5rem;
+            font-size: 2.8rem;
             position: absolute;
-            bottom: 50px;
-            transition: all 0.3s;
+            bottom: 45px;
+            transition: all 0.2s;
             z-index: 2;
         }
         .person.standing {
-            bottom: 100px;
-            transform: rotate(5deg);
+            bottom: 85px;
+            animation: shake 0.1s infinite;
         }
-        .btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px;
-            width: 100%;
-            max-width: 250px;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(2px); }
         }
-        .btn:hover {
-            background: #764ba2;
+        .warning {
+            font-size: 0.9rem;
+            margin: 10px 0;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333;
+            padding: 8px;
+            background: rgba(0, 255, 0, 0.05);
+        }
+        .warning.danger {
+            color: #f00;
+            background: rgba(255, 0, 0, 0.05);
+            border-color: #f00;
+            animation: blink 0.5s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
         .stats {
-            display: flex;
-            justify-content: space-around;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
             margin: 15px 0;
-            background: rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+            border: 1px solid #333;
             padding: 10px;
-            border-radius: 8px;
-        }
-        .stat {
-            text-align: center;
         }
         .stat-value {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #4ecdc4;
+            color: #0f0;
+            margin-bottom: 2px;
         }
         .stat-label {
-            font-size: 0.8rem;
             opacity: 0.7;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
         }
-        .warning {
-            color: #ff9a3d;
-            font-size: 0.9rem;
+        .intensity {
+            height: 4px;
+            background: #333;
             margin: 10px 0;
-            padding: 8px;
-            background: rgba(255, 154, 61, 0.1);
-            border-radius: 6px;
+            position: relative;
+        }
+        .intensity-bar {
+            height: 100%;
+            background: #0f0;
+            width: 0%;
+            transition: width 0.3s;
         }
         .game-over {
             display: none;
@@ -117,26 +136,43 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             z-index: 100;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
         .game-over-content {
-            background: #1a1a2e;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            max-width: 400px;
+            border: 1px solid #f00;
+            padding: 20px;
+            max-width: 350px;
             width: 90%;
+            background: rgba(0,0,0,0.9);
+        }
+        .controls {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+        .pulse {
+            animation: pulse 0.3s;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>🛋️ Couch Guardian</h1>
+        <h1>COUCH GUARDIAN</h1>
         <div class="score" id="score">0</div>
+        
+        <div class="intensity">
+            <div class="intensity-bar" id="intensityBar"></div>
+        </div>
         
         <div class="game-area">
             <div class="couch">🛋️</div>
@@ -144,16 +180,12 @@
         </div>
         
         <div class="warning" id="warning">
-            He's sitting... watch closely.
+            READY
         </div>
-        
-        <button class="btn" onclick="pushPerson()">
-            👊 PUSH BACK (SPACE)
-        </button>
         
         <div class="stats">
             <div class="stat">
-                <div class="stat-value" id="time">0s</div>
+                <div class="stat-value" id="time">0</div>
                 <div class="stat-label">TIME</div>
             </div>
             <div class="stat">
@@ -166,64 +198,79 @@
             </div>
         </div>
         
-        <button class="btn" onclick="resetGame()" style="background: #ff6b6b;">
-            🔄 RESTART (R)
-        </button>
+        <div class="controls">
+            SPACE: PUSH • R: RESTART
+        </div>
     </div>
     
     <div class="game-over" id="gameOver">
         <div class="game-over-content">
-            <h1 style="color: #ff6b6b;">🏃‍♂️ HE LEFT!</h1>
-            <p>Game Over</p>
-            <div class="score" id="finalScore">0</div>
-            <button class="btn" onclick="resetGame()" style="background: #4ecdc4;">
-                🔄 PLAY AGAIN
-            </button>
+            <h1 style="color: #f00; margin-bottom: 10px;">FAILED</h1>
+            <div class="score" style="font-size: 3rem;" id="finalScore">0</div>
+            <div style="margin: 15px 0; font-size: 0.9rem;">
+                <div>TIME: <span id="finalTime">0</span>s</div>
+                <div>PUSHES: <span id="finalPushes">0</span></div>
+                <div>ATTEMPTS: <span id="finalAttempts">0</span></div>
+            </div>
+            <div class="controls">
+                PRESS R TO RESTART
+            </div>
         </div>
     </div>
     
     <script>
+        // ============================================
+        // MINIMALISTIC HARD GAME
+        // ============================================
+        
         // Game state
         let score = 0;
         let time = 0;
         let pushes = 0;
         let attempts = 0;
+        let intensity = 1;
         let isTryingToStand = false;
         let gameOver = false;
         let standTimer = null;
         let gameTimer = null;
+        let patternType = 0; // 0=normal, 1=fast, 2=double, 3=fake
         
         // DOM elements
         const scoreEl = document.getElementById('score');
         const timeEl = document.getElementById('time');
         const pushesEl = document.getElementById('pushes');
         const attemptsEl = document.getElementById('attempts');
+        const intensityBarEl = document.getElementById('intensityBar');
         const personEl = document.getElementById('person');
         const warningEl = document.getElementById('warning');
         const gameOverEl = document.getElementById('gameOver');
         const finalScoreEl = document.getElementById('finalScore');
+        const finalTimeEl = document.getElementById('finalTime');
+        const finalPushesEl = document.getElementById('finalPushes');
+        const finalAttemptsEl = document.getElementById('finalAttempts');
         
         // Start game
         function startGame() {
-            console.log('Game starting...');
-            
             // Reset state
             score = 0;
             time = 0;
             pushes = 0;
             attempts = 0;
+            intensity = 1;
             isTryingToStand = false;
             gameOver = false;
+            patternType = 0;
             
             // Clear timers
             if (standTimer) clearTimeout(standTimer);
             if (gameTimer) clearInterval(gameTimer);
             
-            // Set initial state
+            // Initial state
             personEl.className = 'person';
             personEl.textContent = '🧍';
-            warningEl.textContent = "He's sitting... watch closely.";
-            warningEl.style.color = '#ff9a3d';
+            warningEl.textContent = 'READY';
+            warningEl.className = 'warning';
+            intensityBarEl.style.width = '0%';
             
             // Update display
             updateDisplay();
@@ -232,23 +279,13 @@
             gameTimer = setInterval(gameLoop, 1000);
             
             // Setup controls
-            document.addEventListener('keydown', function(e) {
-                if (e.code === 'Space' && !gameOver) {
-                    pushPerson();
-                    e.preventDefault();
-                }
-                if (e.code === 'KeyR') {
-                    resetGame();
-                }
-            });
+            document.addEventListener('keydown', handleKeyPress);
             
             // Hide game over
             gameOverEl.style.display = 'none';
             
-            // Start first attempt after 3 seconds
-            setTimeout(startStandAttempt, 3000);
-            
-            console.log('Game started');
+            // First attempt soon
+            setTimeout(startAttempt, 1000);
         }
         
         // Game loop
@@ -256,36 +293,99 @@
             if (gameOver) return;
             
             time++;
-            timeEl.textContent = time + 's';
+            timeEl.textContent = time;
             
-            // Random chance to try standing
-            if (!isTryingToStand && Math.random() < 0.2) {
-                startStandAttempt();
+            // Increase intensity
+            if (time % 10 === 0 && intensity < 10) {
+                intensity++;
+                intensityBarEl.style.width = (intensity * 10) + '%';
+            }
+            
+            // Auto-attempt based on intensity
+            if (!isTryingToStand && Math.random() < (0.1 + intensity * 0.05)) {
+                startAttempt();
             }
         }
         
-        // Person tries to stand
-        function startStandAttempt() {
+        // Start attempt
+        function startAttempt() {
             if (isTryingToStand || gameOver) return;
             
             isTryingToStand = true;
             attempts++;
             attemptsEl.textContent = attempts;
             
+            // Choose pattern based on intensity
+            const patterns = [];
+            patterns.push(0); // normal
+            
+            if (intensity >= 3) patterns.push(1); // fast
+            if (intensity >= 5) patterns.push(2); // double
+            if (intensity >= 7) patterns.push(3); // fake
+            
+            patternType = patterns[Math.floor(Math.random() * patterns.length)];
+            
+            // Set duration and warning
+            let duration = 2000;
+            let warning = 'STANDING';
+            
+            switch(patternType) {
+                case 1: // fast
+                    duration = 1000;
+                    warning = 'FAST!';
+                    break;
+                case 2: // double
+                    duration = 1500;
+                    warning = 'DOUBLE';
+                    break;
+                case 3: // fake
+                    duration = 1800;
+                    warning = 'FAKE?';
+                    break;
+            }
+            
+            // Visual
             personEl.classList.add('standing');
             personEl.textContent = '🚶';
-            warningEl.textContent = "HE'S TRYING TO STAND! PUSH NOW!";
-            warningEl.style.color = '#ff6b6b';
+            warningEl.textContent = warning;
+            warningEl.className = 'warning danger';
             
-            // Will stand up in 2 seconds if not pushed back
-            standTimer = setTimeout(function() {
+            // Timer
+            standTimer = setTimeout(() => {
                 if (isTryingToStand && !gameOver) {
-                    endGame();
+                    if (patternType === 3) {
+                        // Fake - he doesn't stand
+                        endAttempt(false);
+                        score += 5;
+                        warningEl.textContent = 'FAKE! +5';
+                        warningEl.className = 'warning';
+                        updateDisplay();
+                    } else {
+                        endGame();
+                    }
                 }
-            }, 2000);
+            }, duration);
+            
+            // Double pattern special
+            if (patternType === 2) {
+                setTimeout(() => {
+                    if (isTryingToStand && !gameOver) {
+                        warningEl.textContent = 'AGAIN!';
+                    }
+                }, duration / 2);
+            }
         }
         
-        // Push person back
+        // End attempt
+        function endAttempt(wasPushed) {
+            isTryingToStand = false;
+            personEl.classList.remove('standing');
+            personEl.textContent = '🧍';
+            
+            if (standTimer) clearTimeout(standTimer);
+        }
+        
+        // Push person
         function pushPerson() {
             if (gameOver) return;
             
@@ -294,53 +394,45 @@
                 pushes++;
                 pushesEl.textContent = pushes;
                 
-                clearTimeout(standTimer);
-                isTryingToStand = false;
+                let points = 0;
                 
-                personEl.classList.remove('standing');
-                personEl.textContent = '🧍';
-                warningEl.textContent = "Nice! Sitting again.";
-                warningEl.style.color = '#4ecdc4';
+                switch(patternType) {
+                    case 0: points = 10; break;
+                    case 1: points = 20; break;
+                    case 2: points = 15; break;
+                    case 3: points = -10; break; // Fake push penalty
+                }
                 
-                // Add points (unpredictable)
-                const points = getPoints(true);
+                // Intensity bonus/penalty
+                points += Math.floor(intensity / 2);
+                
                 score += points;
+                
+                warningEl.textContent = points > 0 ? `+${points}` : `${points}`;
+                warningEl.className = points > 0 ? 'warning' : 'warning danger';
+                
+                endAttempt(true);
                 
             } else {
                 // Unnecessary push
-                const points = getPoints(false);
-                score += points;
-                warningEl.textContent = "Why push? He was sitting!";
-                warningEl.style.color = '#ff6b6b';
+                const penalty = -5 - Math.floor(intensity / 3);
+                score += penalty;
+                
+                warningEl.textContent = `${penalty}`;
+                warningEl.className = 'warning danger';
             }
             
+            // Pulse animation
+            scoreEl.classList.add('pulse');
+            setTimeout(() => scoreEl.classList.remove('pulse'), 300);
+            
             updateDisplay();
-        }
-        
-        // Get points (unpredictable)
-        function getPoints(wasTryingToStand) {
-            if (wasTryingToStand) {
-                // Successful push - usually good, sometimes weird
-                const options = [10, 15, 20, 25, -5, 30, 5, 35];
-                return options[Math.floor(Math.random() * options.length)];
-            } else {
-                // Unnecessary push - usually bad, sometimes lucky
-                const options = [-3, -2, -1, 0, 2, -4, 1, -5];
-                return options[Math.floor(Math.random() * options.length)];
-            }
         }
         
         // Update display
         function updateDisplay() {
             scoreEl.textContent = score;
-            
-            if (score > 0) {
-                scoreEl.className = 'score';
-            } else if (score < 0) {
-                scoreEl.className = 'score negative';
-            } else {
-                scoreEl.className = 'score';
-            }
+            scoreEl.className = score >= 0 ? 'score' : 'score negative';
         }
         
         // End game
@@ -352,9 +444,13 @@
             if (gameTimer) clearInterval(gameTimer);
             
             personEl.textContent = '🏃‍♂️';
-            warningEl.textContent = "He's gone!";
+            warningEl.textContent = 'ESCAPED';
             
             finalScoreEl.textContent = score;
+            finalTimeEl.textContent = time;
+            finalPushesEl.textContent = pushes;
+            finalAttemptsEl.textContent = attempts;
+            
             gameOverEl.style.display = 'flex';
         }
         
@@ -363,19 +459,27 @@
             startGame();
         }
         
-        // Start game when page loads
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded - starting game');
-            startGame();
-        });
+        // Handle key press
+        function handleKeyPress(e) {
+            if (e.code === 'Space' && !gameOver) {
+                pushPerson();
+                e.preventDefault();
+            } else if (e.code === 'KeyR') {
+                resetGame();
+            }
+        }
         
-        // Fallback if DOM already loaded
-        if (document.readyState !== 'loading') {
-            console.log('Document ready - starting game');
+        // Initialize
+        function init() {
             startGame();
         }
         
-        console.log('Couch Guardian loaded');
+        // Start
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
